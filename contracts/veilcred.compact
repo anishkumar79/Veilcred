@@ -1,0 +1,126 @@
+pragma language_version >= 0.13;
+
+import CompactStandardLibrary;
+
+// ════════════════════════════════════════════════════════════════════════
+//  VEILCRED — Confidential Credential Verifier
+// ════════════════════════════════════════════════════════════════════════
+//
+//  PRIVACY MODEL
+//  -------------
+//  PUBLIC  (ledger state — written on-chain, visible to anyone):
+//    • approvedIssuers   — the set of issuer keys this contract trusts.
+//                          Public by design: verifiers must be able to
+//                          audit *who* is allowed to issue credentials.
+//    • usedNullifiers    — one-way tokens marking "this credential has
+//                          already been used at this gate." Prevents
+//                          replay without linking a user's activity
+//                          across different gates.
+//    • verifications     — a public log of {nullifier -> verified}.
+//                          Only the boolean outcome is ever stored here.
+//
+//  PRIVATE (witnesses — supplied at proof time, NEVER touch the ledger):
+//    • issuerKey         — which approved issuer actually signed the
+//                          credential (only "is it *an* approved issuer"
+//                          becomes public, not *which* one).
+//    • attributeValue     — the real underlying value (birth year, tier
+//                          level, license class, KYC score, etc).
+//    • expiry             — the credential's real expiry timestamp.
+//    • signature          — the issuer's signature over the credential.
+//    • holderSecret       — a user-held secret used to derive the
+//                          nullifier so it can't be forged or replayed
+//                          by anyone who doesn't hold the credential.
+//
+//  WHAT CROSSES THE PUBLIC BOUNDARY:
+//    disclose() is called in exactly two places below:
+//      1. on `passes`    — the yes/no result of the threshold check
+//      2. on `nullifier` — a hash that proves "a valid, unused credential
+//                          satisfied this gate" without identifying the
+//                          credential, the issuer, or the holder.
+//    Every other private value (attributeValue, expiry, signature,
+//    issuerKey, holderSecret) is consumed inside the circuit and is
+//    mathematically proven correct — but is never disclosed, and never
+//    appears in ledger state, transaction history, or contract calls.
+// ════════════════════════════════════════════════════════════════════════
+
+export ledger approvedIssuers: Set<Bytes<32>>;
+export ledger usedNullifiers: Set<Bytes<32>>;
+export ledger verifications: Map<Bytes<32>, Boolean>;
+
+// Contract deployer sets the trusted issuer set. In production this
+// would be gated by an admin key / governance circuit; kept minimal
+// here since issuer management is out of scope for the MVP.
+export circuit registerIssuer(issuerKey: Bytes<32>): [] {
+  approvedIssuers.insert(disclose(issuerKey));
+}
+
+// ----------------------------------------------------------------------
+// Private witnesses — the actual credential data. These are supplied
+// locally by the holder's wallet/browser and never leave their device
+// except as inputs to the zero-knowledge proof.
+// ----------------------------------------------------------------------
+witness issuerKey(): Bytes<32>;
+witness attributeValue(): Uint<64>;
+witness expiry(): Uint<64>;
+witness signature(): Bytes<64>;
+witness holderSecret(): Bytes<32>;
+
+// ----------------------------------------------------------------------
+// verifyThreshold — the core privacy circuit.
+//
+//   gateId     : public identifier of the thing being gated
+//                (e.g. hash of "age-gate-v1" or "kyc-tier-2-forum")
+//   threshold  : public minimum value the holder must meet or exceed
+//   currentTime: public reference time for expiry checking
+//
+// Proves: "I hold a credential, signed by an approved issuer, that is
+// unexpired, whose attribute is >= threshold" — without revealing the
+// attribute, the issuer, the expiry date, or the holder's identity.
+// ----------------------------------------------------------------------
+export circuit verifyThreshold(
+  gateId: Bytes<32>,
+  threshold: Uint<64>,
+  currentTime: Uint<64>
+): [] {
+  const issuer   = issuerKey();
+  const value    = attributeValue();
+  const exp      = expiry();
+  const sig      = signature();
+  const secret   = holderSecret();
+
+  // 1. The credential must be signed by a trusted, publicly-listed issuer.
+  //    (checked privately — only membership is proven, not identity)
+  assert(approvedIssuers.member(issuer), "issuer is not on the approved list");
+
+  // 2. The signature must actually cover this exact credential payload.
+  assert(
+    verifySig(issuer, credentialDigest(value, exp), sig),
+    "signature does not match credential"
+  );
+
+  // 3. The credential must not be expired.
+  assert(exp > currentTime, "credential has expired");
+
+  // 4. The one fact that is allowed to become public: does the holder
+  //    clear the threshold?
+  const passes: Boolean = value >= threshold;
+
+  // 5. Derive a nullifier bound to (gate, issuer, secret) so this
+  //    credential can't be replayed on the *same* gate, while use on a
+  //    *different* gate produces an unlinkable nullifier.
+  const nullifier: Bytes<32> = persistentHash<Bytes<96>>(
+    concat(concat(gateId, issuer), secret)
+  );
+  assert(!usedNullifiers.member(nullifier), "credential already used at this gate");
+
+  usedNullifiers.insert(disclose(nullifier));
+  verifications.insert(disclose(nullifier), disclose(passes));
+}
+
+// ----------------------------------------------------------------------
+// isVerified — public read helper so any contract or frontend can check
+// a gate result by nullifier without re-running the proof.
+// ----------------------------------------------------------------------
+export circuit isVerified(nullifier: Bytes<32>): Boolean {
+  return verifications.member(nullifier) && verifications.lookup(nullifier);
+}

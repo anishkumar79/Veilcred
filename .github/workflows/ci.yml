@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ------------------------------------------------------------------
+      # Compact contract compilation.
+      # Requires the Midnight Compact compiler CLI. If your CI runner
+      # doesn't have it preinstalled, install it first — see:
+      # https://docs.midnight.network
+      #
+      # Once installed, uncomment the two lines below.
+      # ------------------------------------------------------------------
+      # - name: Compile Compact contract
+      #   run: compact compile contracts/veilcred.compact managed/veilcred
+
+      - name: Run tests
+        run: npm test
+
+      - name: Type-check + build frontend
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint

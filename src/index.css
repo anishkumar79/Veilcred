@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════════════
+   VEILCRED DESIGN TOKENS
+   Concept: a credential is a sealed document. The palette borrows from
+   ink, paper, and a wax/brass notary seal rather than generic "crypto
+   dark mode" neon — this is a verifier's ledger, not a trading terminal.
+   ══════════════════════════════════════════════════════════════════════ */
+@theme {
+  --color-ink-950: #0d0e14;
+  --color-ink-900: #12141c;
+  --color-ink-800: #1b1e2b;
+  --color-ink-700: #262a3b;
+  --color-ink-600: #383d54;
+
+  --color-paper-100: #f6f2e7;
+  --color-paper-200: #ede7d8;
+  --color-paper-300: #ddd4bc;
+
+  --color-brass-400: #c99b4e;
+  --color-brass-500: #b98b3e;
+  --color-brass-600: #96712f;
+
+  --color-sage-500: #4c9a72;
+  --color-clay-500: #b8543f;
+
+  --color-text-hi: #ede9e0;
+  --color-text-mid: #b3aebd;
+  --color-text-low: #726d80;
+
+  --font-display: "Fraunces", "Iowan Old Style", serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-ink-950);
+  color: var(--color-text-hi);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-brass-500);
+  color: var(--color-ink-950);
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-brass-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Hairline seal-ring, used once, on the hero mark only */
+.seal-ring {
+  border: 1px solid var(--color-brass-500);
+  box-shadow: 0 0 0 4px var(--color-ink-900), 0 0 0 5px var(--color-ink-700);
+}
+
+/* Fine grain texture on the "public ledger" panel so it reads as a
+   different material to the "private" panel beside it */
+.ledger-grain {
+  background-image: radial-gradient(var(--color-ink-700) 0.6px, transparent 0.6px);
+  background-size: 14px 14px;
+}
