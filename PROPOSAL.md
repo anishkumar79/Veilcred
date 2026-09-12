@@ -75,3 +75,4 @@ the fact with off-chain workarounds.
 - Contract-to-contract calls so other Midnight dApps can gate access by
   querying `isVerified` directly instead of re-running a proof.
 - Mainnet deployment at Level 6.
+<!-- Proposal metadata -->
