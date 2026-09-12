@@ -1,12 +1,28 @@
 import { Layout } from "./components/Layout";
 import { WalletConnect } from "./components/WalletConnect";
 import { CredentialProver } from "./components/CredentialProver";
+import { useState } from "react";
 import { VerificationLedger } from "./components/VerificationLedger";
 import { useMidnight } from "./hooks/useMidnight";
+import { deployVeilcredContract } from "./utils/contract";
 
 function App() {
   const { status, wallet, error, ledger, connect, disconnect, prove } =
     useMidnight();
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployedAddress, setDeployedAddress] = useState("");
+
+  const handleDeploy = async () => {
+    setIsDeploying(true);
+    try {
+      const address = await deployVeilcredContract();
+      setDeployedAddress(address);
+    } catch (err: any) {
+      alert("Deployment failed: " + err.message);
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   return (
     <Layout>
@@ -31,6 +47,13 @@ function App() {
                 onConnect={connect}
                 onDisconnect={disconnect}
               />
+              <button
+                onClick={handleDeploy}
+                disabled={isDeploying || !!deployedAddress}
+                className="px-4 py-2 rounded-lg bg-brass-500 text-ink-900 font-medium hover:bg-brass-400 disabled:opacity-50 transition-colors"
+              >
+                {isDeploying ? "Deploying..." : deployedAddress ? "Deployed!" : "Deploy Contract"}
+              </button>
               <a
                 href="#docs"
                 className="text-sm text-text-mid hover:text-text-hi underline underline-offset-4 transition-colors"
@@ -38,6 +61,12 @@ function App() {
                 See how the proof works
               </a>
             </div>
+            {deployedAddress && (
+              <div className="mt-4 p-3 rounded bg-ink-800 border border-brass-500/30 text-sm">
+                <span className="text-brass-400 font-semibold block mb-1">Contract Deployed:</span>
+                <code className="text-text-hi select-all">{deployedAddress}</code>
+              </div>
+            )}
           </div>
 
           <div className="hidden lg:flex justify-center">
