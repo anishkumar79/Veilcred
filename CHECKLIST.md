@@ -47,3 +47,4 @@
 7. Make your commits meaningful and incremental rather than one giant
    commit — e.g. contract, then tests, then frontend components, then CI,
    then docs, is already a natural 5+ commit shape from this codebase.
+<!-- Checklist updates -->
