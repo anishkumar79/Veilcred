@@ -1,22 +1,32 @@
-# Veilcred
+<div align="center">
+  <h1>🛡️ Veilcred</h1>
+  <p><strong>Prove a credential clears the bar — without ever showing what's on it.</strong></p>
+  
+  [![CI](https://github.com/anishkumar79/Veilcred/actions/workflows/ci.yml/badge.svg)](https://github.com/anishkumar79/Veilcred/actions)
+  [![Midnight Preprod](https://img.shields.io/badge/Network-Midnight_Preprod-purple.svg)](https://midnight.network)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![CI](https://github.com/anishkumar79/Veilcred/actions/workflows/ci.yml/badge.svg)
+  <br />
 
-> Prove a credential clears the bar — without ever showing what's on it.
+  ### 🏆 [Live Preprod Demo](https://veilcred.vercel.app/) 🏆
+  *Hackathon Judges: Please click the link above to test the interactive zero-knowledge UI!*
+</div>
 
-## Live Demo & Walkthrough
+---
 
-[Live Preprod Demo](https://veilcred.vercel.app/)
+## 📸 Screenshots & Demo
 
-> **📽️ Hackathon Judges:** Please click the link above to test the UI!
+- **Video Demo:** [Link to your 1-minute video here (e.g. YouTube or X)]
+- **X Launch Profile:** [Link to your X profile/thread here]
 
-*(Add your demo video link here! Example: `[Watch the Demo Video](youtube_link)`)*
+### 1. Connecting Wallet & Generating Local Proof
+![Wallet Connection](screenshots/product_ui.png)
 
-### Screenshots
-*(Upload your screenshots to GitHub and replace these paths!)*
-1. `![Wallet Connected](./docs/assets/wallet_connected.png)` — Show the top left corner with your Preprod address loaded.
-2. `![Deploying Contract](./docs/assets/deploy_contract.png)` — Show the "Contract Deployed" box with your generated address.
-3. `![Terminal Success](./docs/assets/terminal.png)` — Show your Ubuntu terminal where it says `Compiling 3 circuits` in green.
+### 2. Contract Deployed
+![Deployed Contract](screenshots/deployed_id.png)
+
+### 3. Terminal Verification
+![Terminal Output](screenshots/terminal.png) — Show your Ubuntu terminal where it says `Compiling 3 circuits` in green.
 
 [Live Preprod Demo](https://veilcred.vercel.app/)
 
