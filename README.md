@@ -16,7 +16,7 @@
 
 ## 📸 Screenshots & Demo
 
-- **Video Demo:** [Link to your 1-minute video here (e.g. YouTube or X)]
+- **Video Demo:** [Watch the 1-minute Demo on Google Drive](https://drive.google.com/file/d/1RCv2IUtLeQ__9_uNPVplChuHFRiSU_D5/view?usp=sharing)
 - **X Launch Profile:** [Link to your X profile/thread here]
 
 ### 1. Connecting Wallet & Generating Local Proof
