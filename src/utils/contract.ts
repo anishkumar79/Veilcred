@@ -67,8 +67,9 @@ export async function deployVeilcredContract(): Promise<string> {
     const mnLace = midnightObj.mnLace || midnightObj.lace || Object.values(midnightObj)[0];
     
     if (mnLace) {
-      // Request user signature/connection
-      const api = await mnLace.connect();
+      // Try both connection methods depending on the Lace version
+      const api = await (mnLace.connect ? mnLace.connect() : (mnLace as any).enable());
+      
       // api.state() returns an RxJS Observable in the new Midnight API
       const state$ = await api.state();
       
