@@ -17,16 +17,16 @@
 ## 📸 Screenshots & Demo
 
 - **Video Demo:** [Watch the 1-minute Demo on Google Drive](https://drive.google.com/file/d/1RCv2IUtLeQ__9_uNPVplChuHFRiSU_D5/view?usp=sharing)
-- **X Launch Profile:** [Link to your X profile/thread here]
+- **X Launch Profile:** [Read the Veilcred Launch Thread on X](https://x.com/Veilcred/status/2099006726150193522)
 
 ### 1. Connecting Wallet & Generating Local Proof
-![Wallet Connection](screenshots/product_ui.png)
+![Wallet Connection](docs/assets/product_ui.png)
 
 ### 2. Contract Deployed
-![Deployed Contract](screenshots/deployed_id.png)
+![Deployed Contract](docs/assets/deployed_id.png)
 
 ### 3. Terminal Verification
-![Terminal Output](screenshots/terminal.png) — Show your Ubuntu terminal where it says `Compiling 3 circuits` in green.
+![Terminal Output](docs/assets/terminal.png) — Show your Ubuntu terminal where it says `Compiling 3 circuits` in green.
 
 [Live Preprod Demo](https://veilcred.vercel.app/)
 
@@ -164,8 +164,7 @@ verification log.
 
 ## Product X Profile
 
-[➡️ Follow Veilcred on X / Twitter](REPLACE_WITH_YOUR_X_PROFILE_URL) 
-*(Create a fresh Twitter account for the product, post a launch thread with the demo link, and paste the URL here!)*
+[➡️ Read the Veilcred Launch Thread on X](https://x.com/Veilcred/status/2099006726150193522)
 
 ## Project Structure
 
