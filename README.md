@@ -17,7 +17,7 @@
 ## 📸 Screenshots & Demo
 
 - **Video Demo:** [Watch the 1-minute Demo on Google Drive](https://drive.google.com/file/d/1RCv2IUtLeQ__9_uNPVplChuHFRiSU_D5/view?usp=sharing)
-- **X Launch Profile:** [Read the Veilcred Launch Thread on X](https://x.com/Veilcred/status/2099006726150193522)
+- **X Launch Profile:** [https://x.com/Veilcred](https://x.com/Veilcred) | [Launch Thread](https://x.com/Veilcred/status/2099006726150193522)
 
 ### 1. Connecting Wallet & Generating Local Proof
 ![Wallet Connection](docs/assets/product_ui.png)
@@ -164,8 +164,8 @@ verification log.
 
 ## Product X Profile
 
-[➡️ Read the Veilcred Launch Thread on X](https://x.com/Veilcred/status/2099006726150193522)
-
+- **Profile:** [https://x.com/Veilcred](https://x.com/Veilcred)
+- **Launch Thread:** [Read the Veilcred Launch Thread](https://x.com/Veilcred/status/2099006726150193522)
 ## Project Structure
 
 ```
