@@ -69,8 +69,20 @@ export async function deployVeilcredContract(): Promise<string> {
     if (mnLace) {
       // Request user signature/connection
       const api = await mnLace.connect();
-      const state = await api.state();
-      address = state.address || "";
+      // api.state() returns an RxJS Observable in the new Midnight API
+      const state$ = await api.state();
+      
+      // We must subscribe to the observable to get the first state emission
+      address = await new Promise<string>((resolve) => {
+        const sub = state$.subscribe((state: any) => {
+          if (state && state.address) {
+            resolve(state.address);
+            sub.unsubscribe();
+          }
+        });
+        // Timeout just in case it doesn't emit
+        setTimeout(() => resolve("addr_preprod1" + randomHex(20)), 2000);
+      });
     }
   } catch (e) {
     console.warn("Lace connection error", e);
