@@ -161,18 +161,19 @@ async function main() {
     });
     
     const contractAddress = deployed.deployTxData.public.contractAddress;
+    const explorerUrl = `https://preprod.midnightexplorer.com/contracts/0x${contractAddress}`;
     console.log("================================================================================");
     console.log("🎉 SUCCESS! VEILCRED CONTRACT DEPLOYED TO PREPROD!");
     console.log("CONTRACT_ADDRESS=" + contractAddress);
     console.log("Contract Address:", contractAddress);
-    console.log("Explorer:", `https://preprod.midnight.network/contract/${contractAddress}`);
+    console.log("Explorer:", explorerUrl);
     console.log("================================================================================");
 
     const deploymentInfo = {
       network: "preprod",
       contractName: "veilcred",
       contractAddress,
-      explorerUrl: `https://preprod.midnight.network/contract/${contractAddress}`,
+      explorerUrl,
       indexer: envConfiguration.indexer,
       node: envConfiguration.node,
       deployedAt: new Date().toISOString(),
@@ -192,9 +193,9 @@ async function main() {
           `| Field | Value |\n` +
           `| --- | --- |\n` +
           `| **Contract** | Veilcred Confidential Verifier |\n` +
-          `| **Contract Address** | \`${contractAddress}\` |\n` +
+          `| **Contract Address** | \`0x${contractAddress}\` |\n` +
           `| **Network** | Midnight Preprod |\n` +
-          `| **Explorer** | [View on Midnight Explorer](https://preprod.midnight.network/contract/${contractAddress}) |\n` +
+          `| **Explorer** | [View on Midnight Explorer](${explorerUrl}) |\n` +
           `| **Deployed At** | ${deploymentInfo.deployedAt} |\n\n` +
           `Contract address has been written to \`deployed_contract.json\` and uploaded as a CI artifact.\n`
         );

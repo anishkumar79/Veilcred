@@ -2,7 +2,7 @@
   "network": "preprod",
   "contractName": "veilcred",
   "contractAddress": "5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127",
-  "explorerUrl": "https://preprod.midnight.network/contract/5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127",
+  "explorerUrl": "https://preprod.midnightexplorer.com/contracts/0x5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127",
   "indexer": "https://indexer.preprod.midnight.network/api/v4/graphql",
   "node": "https://rpc.preprod.midnight.network",
   "deployedAt": "2026-09-14T15:25:50.002Z"

@@ -56,7 +56,7 @@ export async function disconnectWallet(): Promise<void> {
 }
 
 export const VERIFIED_PREPROD_CONTRACT_ADDRESS = "5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127";
-export const VERIFIED_PREPROD_EXPLORER_URL = `https://preprod.midnight.network/contract/${VERIFIED_PREPROD_CONTRACT_ADDRESS}`;
+export const VERIFIED_PREPROD_EXPLORER_URL = `https://preprod.midnightexplorer.com/contracts/0x${VERIFIED_PREPROD_CONTRACT_ADDRESS}`;
 
 export async function getDeployedContractInfo(): Promise<{ contractAddress: string; explorerUrl: string } | null> {
   try {
@@ -66,7 +66,7 @@ export async function getDeployedContractInfo(): Promise<{ contractAddress: stri
       if (data && data.contractAddress) {
         return {
           contractAddress: data.contractAddress,
-          explorerUrl: data.explorerUrl || `https://preprod.midnight.network/contract/${data.contractAddress}`,
+          explorerUrl: data.explorerUrl || `https://preprod.midnightexplorer.com/contracts/0x${data.contractAddress}`,
         };
       }
     }
