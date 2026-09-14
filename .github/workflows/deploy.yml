@@ -1,13 +1,6 @@
 name: Deploy Veilcred to Preprod
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'contracts/**'
-      - 'preprod-deployment/**'
-      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
