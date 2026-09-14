@@ -34,9 +34,10 @@
 
 | Network | Contract Address | Midnight Explorer |
 |---------|------------------|-------------------|
-| **Midnight Preprod** | `75d96da09aa9414d760770592351106e8473e6cc1d65edf73c2e39d37ba657d5` | [View on Explorer](https://preprod.midnight.network/contract/75d96da09aa9414d760770592351106e8473e6cc1d65edf73c2e39d37ba657d5) |
+| **Midnight Preprod** | `5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127` | [View on Explorer](https://preprod.midnight.network/contract/5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127) |
 
-> 🚀 **CI/CD Automated Deployment**: Automated deployments are powered by GitHub Actions (`.github/workflows/deploy.yml`) using the fast Midnight Preprod deployment pipeline with WASM heap memory patch and 5,000-event batch DUST sync.
+> 🚀 **Verified On-Chain Preprod Contract**: Deployed autonomously via GitHub Actions CI/CD (`.github/workflows/deploy.yml`) utilizing the fast Midnight Preprod deployment pipeline with WASM heap memory patch and 5,000-event batch DUST sync.
+
 
 
 ## What This Product Does

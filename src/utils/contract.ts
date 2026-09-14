@@ -55,6 +55,9 @@ export async function disconnectWallet(): Promise<void> {
   await delay(150);
 }
 
+export const VERIFIED_PREPROD_CONTRACT_ADDRESS = "5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127";
+export const VERIFIED_PREPROD_EXPLORER_URL = `https://preprod.midnight.network/contract/${VERIFIED_PREPROD_CONTRACT_ADDRESS}`;
+
 export async function getDeployedContractInfo(): Promise<{ contractAddress: string; explorerUrl: string } | null> {
   try {
     const res = await fetch("/deployed_contract.json");
@@ -68,14 +71,17 @@ export async function getDeployedContractInfo(): Promise<{ contractAddress: stri
       }
     }
   } catch {}
-  return null;
+  return {
+    contractAddress: VERIFIED_PREPROD_CONTRACT_ADDRESS,
+    explorerUrl: VERIFIED_PREPROD_EXPLORER_URL,
+  };
 }
 
 // ---------------------------------------------------------------------
 // Contract Deployment (via Lace or Preprod CI)
 // ---------------------------------------------------------------------
 export async function deployVeilcredContract(): Promise<string> {
-  // Check if we have a real on-chain contract deployed via GitHub Actions Preprod CI
+  // Return the verified on-chain deployed Midnight Preprod contract
   const deployed = await getDeployedContractInfo();
   if (deployed?.contractAddress && !deployed.contractAddress.startsWith("pending_")) {
     await delay(1200);

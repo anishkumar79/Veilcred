@@ -1,10 +1,9 @@
 {
   "network": "preprod",
   "contractName": "veilcred",
-  "contractAddress": "75d96da09aa9414d760770592351106e8473e6cc1d65edf73c2e39d37ba657d5",
-  "explorerUrl": "https://preprod.midnight.network/contract/75d96da09aa9414d760770592351106e8473e6cc1d65edf73c2e39d37ba657d5",
+  "contractAddress": "5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127",
+  "explorerUrl": "https://preprod.midnight.network/contract/5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127",
   "indexer": "https://indexer.preprod.midnight.network/api/v4/graphql",
   "node": "https://rpc.preprod.midnight.network",
-  "proofServer": "https://preprod.midnight.network",
-  "deployedAt": "2026-09-14T09:59:32.000Z"
+  "deployedAt": "2026-09-14T15:25:50.002Z"
 }
