@@ -18,10 +18,23 @@ import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { FaucetClient } from '@midnight-ntwrk/testkit-js';
 import * as Rx from 'rxjs';
 
+import crypto from 'node:crypto';
+
+function normalizeSeed(input: string): string {
+  const trimmed = input.trim();
+  if (trimmed.includes(' ')) {
+    const salt = 'mnemonic';
+    const bip39Seed = crypto.pbkdf2Sync(trimmed.normalize('NFKD'), salt.normalize('NFKD'), 2048, 64, 'sha512');
+    return bip39Seed.subarray(0, 32).toString('hex');
+  }
+  return trimmed;
+}
+
 async function main() {
   console.log("Starting deployment to Preprod...");
-  const seed = process.env.WALLET_SEED;
-  if (!seed) throw new Error("WALLET_SEED environment variable is required");
+  const rawSeed = process.env.WALLET_SEED;
+  if (!rawSeed) throw new Error("WALLET_SEED environment variable is required");
+  const seed = normalizeSeed(rawSeed);
   
   const config = new PreprodRemoteConfig();
   const logger = await createLogger(config.logDir, false);
