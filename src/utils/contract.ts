@@ -55,10 +55,33 @@ export async function disconnectWallet(): Promise<void> {
   await delay(150);
 }
 
+export async function getDeployedContractInfo(): Promise<{ contractAddress: string; explorerUrl: string } | null> {
+  try {
+    const res = await fetch("/deployed_contract.json");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.contractAddress) {
+        return {
+          contractAddress: data.contractAddress,
+          explorerUrl: data.explorerUrl || `https://preprod.midnight.network/contract/${data.contractAddress}`,
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
+
 // ---------------------------------------------------------------------
-// Contract Deployment (via Lace)
+// Contract Deployment (via Lace or Preprod CI)
 // ---------------------------------------------------------------------
 export async function deployVeilcredContract(): Promise<string> {
+  // Check if we have a real on-chain contract deployed via GitHub Actions Preprod CI
+  const deployed = await getDeployedContractInfo();
+  if (deployed?.contractAddress && !deployed.contractAddress.startsWith("pending_")) {
+    await delay(1200);
+    return deployed.contractAddress;
+  }
+
   let address = "";
   try {
     // Try to connect to Lace

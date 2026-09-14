@@ -30,11 +30,14 @@
 
 [Live Preprod Demo](https://veilcred.vercel.app/)
 
-## Contract Address
+## 🔗 Deployed On-Chain Contract Address
 
-| Network | Address |
-|---------|---------|
-| Preprod | `contract_preprod190f3468b59becd6a4c176f06460958935cc50c` |
+| Network | Contract Address | Midnight Explorer |
+|---------|------------------|-------------------|
+| **Midnight Preprod** | `75d96da09aa9414d760770592351106e8473e6cc1d65edf73c2e39d37ba657d5` | [View on Explorer](https://preprod.midnight.network/contract/75d96da09aa9414d760770592351106e8473e6cc1d65edf73c2e39d37ba657d5) |
+
+> 🚀 **CI/CD Automated Deployment**: Automated deployments are powered by GitHub Actions (`.github/workflows/deploy.yml`) using the fast Midnight Preprod deployment pipeline with WASM heap memory patch and 5,000-event batch DUST sync.
+
 
 ## What This Product Does
 
