@@ -35,7 +35,7 @@ async function main() {
   const seed = normalizeSeed(rawSeed);
 
   const config = new PreprodRemoteConfig();
-  const logger = await createLogger(config.logDir, false);
+  const logger = await createLogger(config.logDir, true);
   const testEnv = config.getEnvironment(logger);
   console.log("Starting environment...");
   let envConfiguration: any;
