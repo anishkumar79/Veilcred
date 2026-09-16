@@ -4,9 +4,9 @@ globalThis.WebSocket = WebSocket as unknown as typeof globalThis.WebSocket;
 import fs from 'node:fs';
 import { PreprodRemoteConfig } from '../config.js';
 import {
-  MidnightWalletProvider,
   FaucetClient,
 } from '@midnight-ntwrk/testkit-js';
+import { MidnightWalletProvider } from './midnight-wallet-provider.js';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
@@ -53,7 +53,7 @@ async function main() {
   console.log("Building wallet provider...");
   // Use the testkit-js built-in MidnightWalletProvider which supports v9 ledger
   const walletProvider = await MidnightWalletProvider.build(logger, envConfiguration, seed);
-  await (walletProvider as any).start(false);
+  await walletProvider.start();
 
   console.log("Syncing unshielded wallet with Preprod...");
   const unshieldedState = await walletProvider.wallet.unshielded.waitForSyncedState();
