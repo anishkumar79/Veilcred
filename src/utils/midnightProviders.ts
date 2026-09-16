@@ -53,7 +53,8 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
       getEncryptionPublicKey: () => shieldedAddresses.shieldedEncryptionPublicKey,
       balanceTx: async (tx: UnboundTransaction): Promise<FinalizedTransaction> => {
         const serializedTx = toHex(tx.serialize());
-        const received = await api.balanceUnsealedTransaction(serializedTx);
+        // Wrap the payload with version 'v9' as expected by the 1am wallet connector
+        const received = await (api.balanceUnsealedTransaction as any)({ version: 'v9', tx: serializedTx });
         return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
           "signature",
           "proof",
@@ -64,7 +65,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     } as any, // Typed as any to bypass strict internal typing for the hackathon
     midnightProvider: {
       submitTx: async (tx: FinalizedTransaction): Promise<TransactionId> => {
-        await api.submitTransaction(toHex(tx.serialize()));
+        await (api.submitTransaction as any)({ version: 'v9', tx: toHex(tx.serialize()) });
         const txIdentifiers = tx.identifiers();
         return txIdentifiers[0]!;
       },
