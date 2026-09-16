@@ -183,9 +183,13 @@ export async function submitVerification(
   
   try {
     // Import SDK and compiled contract dynamically to avoid build errors if not compiled yet
-    const { DAppConnectorWalletProvider } = await import('@midnight-ntwrk/dapp-connector-api');
+    // @ts-ignore
+    const { DAppConnectorWalletProvider } = await import('@midnight-ntwrk/midnight-js-dapp-connector-wallet-provider');
+    // @ts-ignore
     const { MidnightClient } = await import('@midnight-ntwrk/midnight-js');
+    // @ts-ignore
     const { httpClientProofProvider } = await import('@midnight-ntwrk/midnight-js-http-client-proof-provider');
+    // @ts-ignore
     const { indexerPublicDataProvider } = await import('@midnight-ntwrk/midnight-js-indexer-public-data-provider');
     
     // @ts-ignore
