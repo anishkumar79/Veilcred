@@ -210,17 +210,21 @@ export async function submitVerification(
     const { Contract } = await import("../../managed/veilcred/contract/index.js");
 
     // Initialize the generated contract wrapper with the required witnesses
-    const veilcredContract = new Contract({
-        issuerKey: (ctx: any) => [ctx.privateState, ctx.privateState.issuerKey],
-        attributeValue: (ctx: any) => [ctx.privateState, ctx.privateState.attributeValue],
-        expiry: (ctx: any) => [ctx.privateState, ctx.privateState.expiry],
-        signature: (ctx: any) => [ctx.privateState, ctx.privateState.signature],
-        holderSecret: (ctx: any) => [ctx.privateState, ctx.privateState.holderSecret],
-    });
+    class VeilcredContractWrapper extends Contract {
+      constructor() {
+        super({
+          issuerKey: (ctx: any) => [ctx.privateState, ctx.privateState.issuerKey],
+          attributeValue: (ctx: any) => [ctx.privateState, ctx.privateState.attributeValue],
+          expiry: (ctx: any) => [ctx.privateState, ctx.privateState.expiry],
+          signature: (ctx: any) => [ctx.privateState, ctx.privateState.signature],
+          holderSecret: (ctx: any) => [ctx.privateState, ctx.privateState.holderSecret],
+        });
+      }
+    }
 
     const compiledContract = CompiledContract.make(
       "veilcred",
-      veilcredContract as any
+      VeilcredContractWrapper as any
     ) as any;
     
     const deployed = await getDeployedContractInfo();
