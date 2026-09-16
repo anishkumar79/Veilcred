@@ -58,20 +58,32 @@ export async function connectWallet(): Promise<WalletState> {
   // Connect to trigger the popup
   const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   
-  // api.state() returns an RxJS Observable in the new Midnight API
-  const state$ = await api.state();
+  let address = "connected-wallet-hidden";
   
-  // We must subscribe to the observable to get the real wallet state
-  const address = await new Promise<string>((resolve) => {
-    const sub = state$.subscribe((state: any) => {
-      if (state && state.address) {
-        resolve(state.address);
-        sub.unsubscribe();
+  // Try to extract the address based on different wallet provider shapes
+  if (api) {
+    if (typeof api.address === "string") {
+      address = api.address;
+    } else if (typeof api.changeAddress === "string") {
+      address = api.changeAddress;
+    } else if (typeof api.state === "function") {
+      // Legacy Lace/Nightly observable approach
+      try {
+        const state$ = await api.state();
+        address = await new Promise<string>((resolve) => {
+          const sub = state$.subscribe((state: any) => {
+            if (state && state.address) {
+              resolve(state.address);
+              sub.unsubscribe();
+            }
+          });
+          setTimeout(() => resolve("connected-wallet-hidden"), 2000);
+        });
+      } catch (e) {
+        console.warn("Could not subscribe to wallet state", e);
       }
-    });
-    // Timeout just in case it doesn't emit, falling back to a hidden address
-    setTimeout(() => resolve("connected-wallet-hidden"), 2000);
-  });
+    }
+  }
 
   return { address, network: "preprod" };
 }
