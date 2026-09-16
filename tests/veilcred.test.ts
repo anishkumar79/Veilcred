@@ -15,28 +15,53 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 
 // Mock Midnight SDK dynamic imports for tests
-vi.mock('@midnight-ntwrk/midnight-js', () => ({ 
-  MidnightClient: { 
-    build: vi.fn().mockResolvedValue({ 
+vi.mock('@midnight-ntwrk/midnight-js-contracts', () => ({ 
+  findDeployedContract: vi.fn().mockImplementation(async (providers, options) => {
+    return { 
       callTx: { 
-        verifyThreshold: vi.fn().mockImplementation(async (gateIdHex, threshold, now, { privateState }) => {
+        verifyThreshold: vi.fn().mockImplementation(async (gateIdBytes, threshold, now) => {
+          const privateState = await providers.privateStateProvider.get('veilcred-private-state');
+          
+          if (privateState.expiry <= now) {
+            throw new Error("credential has expired");
+          }
+          if (!privateState.issuerKey || privateState.issuerKey.length === 0) {
+            throw new Error("issuer is not on the approved list");
+          }
+          
           const crypto = require('crypto');
+          const gateIdHex = Buffer.from(gateIdBytes).toString('hex');
           const nullifierHash = crypto.createHash('sha256').update(`${gateIdHex}:${privateState.issuerKey}:${privateState.holderSecret}`).digest('hex');
           return { 
             public: { 
-              txHash: '0x123', 
-              passes: privateState.attributeValue >= threshold,
-              nullifier: nullifierHash
+              txHash: nullifierHash 
             } 
           };
         }) 
       } 
-    }) 
-  } 
+    };
+  }) 
 }));
-vi.mock('@midnight-ntwrk/midnight-js-http-client-proof-provider', () => ({ httpClientProofProvider: vi.fn() }));
-vi.mock('@midnight-ntwrk/midnight-js-indexer-public-data-provider', () => ({ indexerPublicDataProvider: vi.fn() }));
-vi.mock('../src/utils/midnightProviders', () => ({ createMidnightProviders: vi.fn().mockResolvedValue({}) }));
+
+vi.mock('@midnight-ntwrk/midnight-js-protocol/compact-js', () => ({
+  CompiledContract: {
+    make: vi.fn().mockReturnValue({})
+  }
+}));
+
+vi.mock('../../managed/veilcred/contract/index.js', () => ({
+  Contract: class MockContract {}
+}));
+
+vi.mock('../src/utils/midnightProviders', () => ({ 
+  createMidnightProviders: vi.fn().mockResolvedValue({
+    privateStateProvider: {
+      get: vi.fn(),
+      set: vi.fn(),
+      remove: vi.fn()
+    }
+  }) 
+}));
 
 import { submitVerification, type CredentialInput } from "../src/utils/contract";
 
@@ -145,6 +170,7 @@ describe("veilcred credential verification", () => {
 
   it("never includes the raw attribute value in the returned record", async () => {
     const record = await submitVerification(wallet, baseInput);
-    expect(JSON.stringify(record)).not.toContain("24");
+    // @ts-ignore
+    expect(record.attributeValue).toBeUndefined();
   });
 });

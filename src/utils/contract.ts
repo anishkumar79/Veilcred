@@ -222,11 +222,12 @@ export async function submitVerification(
     
     // If the transaction is successful, we get a real on-chain transaction hash
     const txHash = tx.public.txHash;
+    const passes = input.attributeValue >= input.threshold;
     
     return {
       nullifier: txHash, // Use txHash as a unique ID for the verification record since nullifier isn't returned
       gateLabel: input.gateLabel,
-      verified: true, // If verifyThreshold didn't throw, it passed the threshold check
+      verified: passes, // The contract writes this outcome to the ledger; we evaluate it here for the UI
       timestamp: now,
       txHash,
       explorerUrl: `https://preprod.midnightexplorer.com/transaction/${txHash}`
