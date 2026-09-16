@@ -1,0 +1,22 @@
+diff --git a/node_modules/@midnightntwrk/wallet-sdk-unshielded-wallet/dist/v1/SyncSchema.js b/node_modules/@midnightntwrk/wallet-sdk-unshielded-wallet/dist/v1/SyncSchema.js
+index 5ab5a5b..9f97465 100644
+--- a/node_modules/@midnightntwrk/wallet-sdk-unshielded-wallet/dist/v1/SyncSchema.js
++++ b/node_modules/@midnightntwrk/wallet-sdk-unshielded-wallet/dist/v1/SyncSchema.js
+@@ -67,7 +67,7 @@ export const UnshieldedTransactionSchema = Schema.Data(Schema.Struct({
+     id: Schema.Number,
+     hash: Schema.String,
+     type: Schema.Literal('RegularTransaction', 'SystemTransaction', 'BridgeClaimTransaction'),
+-    protocolVersion: Schema.Number,
++    protocolVersion: Schema.optional(Schema.Number),
+     identifiers: Schema.optional(Schema.Array(Schema.String)),
+     block: Schema.Struct({
+         hash: Schema.String,
+@@ -116,7 +116,7 @@ export const ProgressSchema = Schema.Struct({
+      * The protocol version at the CHAIN'S tip — not the version of anything on this address's timeline, which may be far
+      * behind it or empty. Zero is not a version: it is the source reporting that it has indexed no block yet.
+      */
+-    protocolVersion: Schema.Number,
++    protocolVersion: Schema.optional(Schema.Number),
+ });
+ export const WalletSyncUpdateSchema = Schema.Union(UnshieldedUpdateSchema, ProgressSchema);
+ export const VersionSignalSyncUpdate = {
