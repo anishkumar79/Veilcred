@@ -27,6 +27,11 @@ jobs:
           cp -r managed/veilcred/zkir     preprod-deployment/contracts/src/managed/bboard/zkir
           echo "Contract artifacts copied successfully."
 
+      - name: Install contracts dependencies (with compact-runtime 0.19.0)
+        run: |
+          cd preprod-deployment/contracts
+          npm install
+
       - name: Build Contract Bindings
         run: |
           cd preprod-deployment/contracts
