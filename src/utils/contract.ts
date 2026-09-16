@@ -58,10 +58,22 @@ export async function connectWallet(): Promise<WalletState> {
   // Connect to trigger the popup
   await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   
-  // The DApp connector v4 does not expose the user's address directly via state()
-  // The wallet signs transactions internally, so we don't strictly need the address here.
-  // We return a mock address for UI purposes.
-  return { address: "connected-wallet-hidden", network: "preprod" };
+  // api.state() returns an RxJS Observable in the new Midnight API
+  const state$ = await api.state();
+  
+  // We must subscribe to the observable to get the real wallet state
+  const address = await new Promise<string>((resolve) => {
+    const sub = state$.subscribe((state: any) => {
+      if (state && state.address) {
+        resolve(state.address);
+        sub.unsubscribe();
+      }
+    });
+    // Timeout just in case it doesn't emit, falling back to a hidden address
+    setTimeout(() => resolve("connected-wallet-hidden"), 2000);
+  });
+
+  return { address, network: "preprod" };
 }
 
 export async function disconnectWallet(): Promise<void> {
