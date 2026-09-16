@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "mkdir -p public/keys public/zkir && cp -r managed/veilcred/keys/* public/keys/ && cp -r managed/veilcred/zkir/* public/zkir/ && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
@@ -16,6 +16,11 @@
     "@midnight-ntwrk/compact-runtime": "^0.19.0",
     "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
     "@midnight-ntwrk/midnight-js": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "^4.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "rxjs": "^7.8.2"

@@ -171,31 +171,12 @@ export async function submitVerification(
   try {
     // Import SDK and compiled contract dynamically to avoid build errors if not compiled yet
     // @ts-ignore
-    const { DAppConnectorWalletProvider } = await import('@midnight-ntwrk/midnight-js-dapp-connector-wallet-provider');
-    // @ts-ignore
     const { MidnightClient } = await import('@midnight-ntwrk/midnight-js');
     // @ts-ignore
-    const { httpClientProofProvider } = await import('@midnight-ntwrk/midnight-js-http-client-proof-provider');
-    // @ts-ignore
-    const { indexerPublicDataProvider } = await import('@midnight-ntwrk/midnight-js-indexer-public-data-provider');
-    
-    // @ts-ignore
     const { veilcredContract } = await import("../../managed/veilcred/contract/index.js");
+    const { createMidnightProviders } = await import("./midnightProviders.js");
 
-    const dappProvider = new DAppConnectorWalletProvider(api);
-    
-    // Initialize standard Preprod endpoints
-    const indexerUrl = 'https://indexer.preprod.midnight.network/api/v4/graphql';
-    const indexerWSUrl = 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws';
-    const proofServerUrl = 'https://proof-server.preprod.midnight.network'; // NOTE: This requires a reachable proof server
-
-    const providers = {
-      privateStateProvider: dappProvider,
-      publicDataProvider: indexerPublicDataProvider(indexerUrl, indexerWSUrl),
-      proofProvider: httpClientProofProvider(proofServerUrl),
-      walletProvider: dappProvider,
-      midnightProvider: dappProvider,
-    };
+    const providers = await createMidnightProviders(api);
     
     // Check if we have a deployed address from the preprod deployment
     const deployed = await getDeployedContractInfo();
@@ -218,39 +199,27 @@ export async function submitVerification(
           issuerKey: input.issuerKey,
           attributeValue: BigInt(input.attributeValue),
           expiry: BigInt(input.expiryTimestamp),
-          signature: "00".repeat(64), // Assuming a mocked sig if real one isn't passed for now
+          signature: "00".repeat(64), // Using mocked signature format for hackathon due to time constraints
           holderSecret: input.holderSecret
         }
       }
     );
     
     // If the transaction is successful, we get a real on-chain transaction hash
-    const txHash = tx.public.txHash || tx.txHash || "0x" + await randomHex(32);
+    const txHash = tx.public.txHash || tx.txHash;
     
     return {
-      nullifier: tx.public.nullifier?.toString() || await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${input.holderSecret}`),
+      nullifier: tx.public.nullifier?.toString(),
       gateLabel: input.gateLabel,
-      verified: tx.public.passes || (input.attributeValue >= input.threshold),
+      verified: tx.public.passes,
       timestamp: now,
       txHash,
       explorerUrl: `https://preprod.midnightexplorer.com/transaction/${txHash}`
     };
 
   } catch (err) {
-    console.warn("Full on-chain SDK integration missing or failed. Simulating Midnight flow for hackathon MVP:", err);
-    
-    // Simulate proof generation and network latency
-    await delay(2500);
-    const txHash = "0x" + await randomHex(32);
-    
-    return {
-      nullifier: await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${input.holderSecret}`),
-      gateLabel: input.gateLabel,
-      verified: (input.attributeValue >= input.threshold),
-      timestamp: now,
-      txHash,
-      explorerUrl: `https://preprod.midnightexplorer.com/transaction/${txHash}`
-    };
+    console.error("Full on-chain SDK integration failed.", err);
+    throw new Error("Could not execute real on-chain transaction. Ensure the contract is compiled and your 1am wallet is authorized.");
   }
 }
 
