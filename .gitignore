@@ -13,8 +13,8 @@ dist-ssr
 *.local
 
 # compact compile output — regenerate with `compact compile`
-managed/*
-!managed/.gitkeep
+# managed/*
+# !managed/.gitkeep
 
 # Editor directories and files
 .vscode/*

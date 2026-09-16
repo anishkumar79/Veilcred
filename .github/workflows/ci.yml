@@ -24,12 +24,11 @@ jobs:
 
       # ------------------------------------------------------------------
       # Compact contract compilation.
-      # Requires the Midnight Compact compiler CLI. If your CI runner
-      # doesn't have it preinstalled, install it first — see:
-      # https://docs.midnight.network
-      #
-      # Once installed, uncomment the two lines below.
-      # ------------------------------------------------------------------
+      - name: Install Compact CLI
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Compile Compact contract
         run: compact compile contracts/veilcred.compact managed/veilcred
 

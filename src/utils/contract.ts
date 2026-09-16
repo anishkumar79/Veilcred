@@ -189,7 +189,7 @@ export async function submitVerification(
     const { indexerPublicDataProvider } = await import('@midnight-ntwrk/midnight-js-indexer-public-data-provider');
     
     // @ts-ignore
-    const { veilcredContract } = await import("../../managed/veilcred/contract/index.cjs");
+    const { veilcredContract } = await import("../../managed/veilcred/contract/index.js");
 
     const dappProvider = new DAppConnectorWalletProvider(api);
     
