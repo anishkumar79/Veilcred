@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24.11.1"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "postinstall": "patch-package --patch-dir infra/patches",
@@ -51,8 +51,15 @@
     "@midnight-ntwrk/midnight-js-protocol": "^5.0.0-beta.8",
     "@midnight-ntwrk/midnight-js-types": "^5.0.0-beta.8",
     "@midnight-ntwrk/midnight-js-utils": "^5.0.0-beta.8",
-    "@midnight-ntwrk/testkit-js": "4.1.1",
-    "@midnight-ntwrk/wallet-sdk": "1.0.0",
+    "@midnight-ntwrk/testkit-js": "5.0.0-beta.8",
+    "@midnightntwrk/wallet-sdk": "2.0.0-beta.3",
+    "@midnight-ntwrk/wallet-sdk": "npm:@midnightntwrk/wallet-sdk@2.0.0-beta.3",
+    "@midnight-ntwrk/wallet-sdk-facade": "npm:@midnightntwrk/wallet-sdk-facade@5.0.0-beta.3",
+    "@midnight-ntwrk/wallet-sdk-hd": "npm:@midnight-ntwrk/wallet-sdk-hd@3.1.0-beta.2",
+    "@midnight-ntwrk/wallet-sdk-shielded": "npm:@midnightntwrk/wallet-sdk-shielded@4.0.0-beta.3",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "npm:@midnightntwrk/wallet-sdk-unshielded-wallet@4.0.0-beta.3",
+    "@midnight-ntwrk/wallet-sdk-address-format": "npm:@midnightntwrk/wallet-sdk-address-format@4.0.0-beta.3",
+    "@midnight-ntwrk/wallet-sdk-abstractions": "npm:@midnightntwrk/wallet-sdk-abstractions@3.0.0-beta.1",
     "axios": "^1.17.0",
     "buffer": "^6.0.3",
     "fp-ts": "^2.16.11",
