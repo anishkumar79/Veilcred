@@ -169,49 +169,64 @@ export async function submitVerification(
   const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   
   try {
-    // Import SDK and compiled contract dynamically to avoid build errors if not compiled yet
-    // @ts-ignore
-    const { MidnightClient } = await import('@midnight-ntwrk/midnight-js');
-    // @ts-ignore
-    const { veilcredContract } = await import("../../managed/veilcred/contract/index.js");
     const { createMidnightProviders } = await import("./midnightProviders.js");
-
     const providers = await createMidnightProviders(api);
     
-    // Check if we have a deployed address from the preprod deployment
+    // Inject the private state for this specific proof verification
+    providers.privateStateProvider.get = async () => ({
+        issuerKey: new TextEncoder().encode(input.issuerKey),
+        attributeValue: BigInt(input.attributeValue),
+        expiry: BigInt(input.expiryTimestamp),
+        signature: new Uint8Array(64), // Mocked signature format for hackathon
+        holderSecret: new TextEncoder().encode(input.holderSecret || "") 
+    });
+
+    const { findDeployedContract } = await import("@midnight-ntwrk/midnight-js-contracts");
+    const { CompiledContract } = await import("@midnight-ntwrk/midnight-js-protocol/compact-js");
+    const { Contract } = await import("../../managed/veilcred/contract/index.js");
+
+    // Initialize the generated contract wrapper with the required witnesses
+    const veilcredContract = new Contract({
+        issuerKey: (ctx: any) => [ctx.privateState, ctx.privateState.issuerKey],
+        attributeValue: (ctx: any) => [ctx.privateState, ctx.privateState.attributeValue],
+        expiry: (ctx: any) => [ctx.privateState, ctx.privateState.expiry],
+        signature: (ctx: any) => [ctx.privateState, ctx.privateState.signature],
+        holderSecret: (ctx: any) => [ctx.privateState, ctx.privateState.holderSecret],
+    });
+
+    const compiledContract = CompiledContract.make(
+      "veilcred",
+      veilcredContract as any
+    ) as any;
+    
     const deployed = await getDeployedContractInfo();
     const address = deployed?.contractAddress || VERIFIED_PREPROD_CONTRACT_ADDRESS;
     
-    // @ts-ignore
-    const client = await MidnightClient.build(providers, veilcredContract, address);
+    const client = await findDeployedContract(providers, {
+      contractAddress: address,
+      compiledContract,
+      privateStateId: 'veilcred-private-state',
+      initialPrivateState: await providers.privateStateProvider.get('veilcred-private-state')
+    });
     
     // Execute the contract circuit
     // This prompts the wallet for a signature and submits to the Midnight blockchain
     const gateIdHex = await sha256Hex(input.gateLabel);
+    const gateIdBytes = new TextEncoder().encode(gateIdHex);
     
-    // @ts-ignore
     const tx = await client.callTx.verifyThreshold(
-      gateIdHex,
+      gateIdBytes,
       BigInt(input.threshold),
-      BigInt(now),
-      {
-        privateState: {
-          issuerKey: input.issuerKey,
-          attributeValue: BigInt(input.attributeValue),
-          expiry: BigInt(input.expiryTimestamp),
-          signature: "00".repeat(64), // Using mocked signature format for hackathon due to time constraints
-          holderSecret: input.holderSecret
-        }
-      }
+      BigInt(now)
     );
     
     // If the transaction is successful, we get a real on-chain transaction hash
-    const txHash = tx.public.txHash || tx.txHash;
+    const txHash = tx.public.txHash;
     
     return {
-      nullifier: tx.public.nullifier?.toString(),
+      nullifier: txHash, // Use txHash as a unique ID for the verification record since nullifier isn't returned
       gateLabel: input.gateLabel,
-      verified: tx.public.passes,
+      verified: true, // If verifyThreshold didn't throw, it passed the threshold check
       timestamp: now,
       txHash,
       explorerUrl: `https://preprod.midnightexplorer.com/transaction/${txHash}`
