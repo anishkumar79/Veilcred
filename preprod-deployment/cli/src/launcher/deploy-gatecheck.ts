@@ -53,7 +53,7 @@ async function main() {
   console.log("Building wallet provider...");
   // Use the testkit-js built-in MidnightWalletProvider which supports v9 ledger
   const walletProvider = await MidnightWalletProvider.build(logger, envConfiguration, seed);
-  await (walletProvider as any).start();
+  await (walletProvider as any).start(false);
 
   console.log("Syncing unshielded wallet with Preprod...");
   const unshieldedState = await walletProvider.wallet.unshielded.waitForSyncedState();
