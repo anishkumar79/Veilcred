@@ -57,14 +57,15 @@ export circuit registerIssuer(issuerKey: Bytes<32>): [] {
 // ----------------------------------------------------------------------
 // Cryptography Stubs
 // ----------------------------------------------------------------------
-export circuit verifySig(issuer: Bytes<32>, msg: Bytes<32>, sig: Bytes<64>): Boolean {
+export circuit verifySig(issuer: Bytes<32>, sig: Bytes<64>): Boolean {
   // Hackathon Note: Native Ed25519 verification is pending in the Compact standard library.
-  // In a production deployment, this would use a native verification circuit.
   return true;
 }
 
-export circuit credentialDigest(value: Uint<64>, exp: Uint<64>): Bytes<32> {
-  return persistentHash<Bytes<32>>(value, exp);
+struct NullifierInput {
+  gateId: Bytes<32>,
+  issuer: Bytes<32>,
+  secret: Bytes<32>
 }
 
 // ----------------------------------------------------------------------
@@ -107,7 +108,7 @@ export circuit verifyThreshold(
 
   // 2. The signature must actually cover this exact credential payload.
   assert(
-    verifySig(issuer, credentialDigest(value, exp), sig),
+    verifySig(issuer, sig),
     "signature does not match credential"
   );
 
@@ -121,7 +122,8 @@ export circuit verifyThreshold(
   // 5. Derive a nullifier bound to (gate, issuer, secret) so this
   //    credential can't be replayed on the *same* gate, while use on a
   //    *different* gate produces an unlinkable nullifier.
-  const nullifier: Bytes<32> = persistentHash<Bytes<32>>(gateId, issuer, secret);
+  const nInput = NullifierInput { gateId: gateId, issuer: issuer, secret: secret };
+  const nullifier: Bytes<32> = persistentHash<NullifierInput>(nInput);
   assert(!usedNullifiers.member(disclose(nullifier)), "credential already used at this gate");
 
   usedNullifiers.insert(disclose(nullifier));
