@@ -30,8 +30,8 @@ jobs:
       #
       # Once installed, uncomment the two lines below.
       # ------------------------------------------------------------------
-      # - name: Compile Compact contract
-      #   run: compact compile contracts/veilcred.compact managed/veilcred
+      - name: Compile Compact contract
+        run: compact compile contracts/veilcred.compact managed/veilcred
 
       - name: Run tests
         run: npm test

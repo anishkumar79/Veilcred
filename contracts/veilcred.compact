@@ -93,10 +93,10 @@ export circuit verifyThreshold(
   assert(approvedIssuers.member(disclose(issuer)), "issuer is not on the approved list");
 
   // 2. The signature must actually cover this exact credential payload.
-  // assert(
-  //   verifySig(issuer, credentialDigest(value, exp), sig),
-  //   "signature does not match credential"
-  // );
+  assert(
+    verifyEd25519Signature(issuer, persistentHash<Bytes<32>>(value, exp), sig),
+    "signature does not match credential"
+  );
 
   // 3. The credential must not be expired.
   assert(exp > currentTime, "credential has expired");
@@ -108,8 +108,7 @@ export circuit verifyThreshold(
   // 5. Derive a nullifier bound to (gate, issuer, secret) so this
   //    credential can't be replayed on the *same* gate, while use on a
   //    *different* gate produces an unlinkable nullifier.
-  // Simplified for the MVP compilation!
-  const nullifier: Bytes<32> = persistentHash<Bytes<32>>(gateId);
+  const nullifier: Bytes<32> = persistentHash<Bytes<32>>(gateId, issuer, secret);
   assert(!usedNullifiers.member(disclose(nullifier)), "credential already used at this gate");
 
   usedNullifiers.insert(disclose(nullifier));

@@ -30,9 +30,16 @@ export function VerificationLedger({
             >
               <div className="min-w-0">
                 <p className="text-sm text-text-hi">{r.gateLabel}</p>
-                <p className="font-mono text-[11px] text-text-low truncate">
-                  nullifier {r.nullifier.slice(0, 20)}…
-                </p>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <p className="font-mono text-[11px] text-text-low truncate max-w-[120px]">
+                    nullifier {r.nullifier.slice(0, 16)}…
+                  </p>
+                  {r.explorerUrl && (
+                    <a href={r.explorerUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-brass-400 hover:text-brass-300 transition-colors underline underline-offset-2">
+                      View Tx ↗
+                    </a>
+                  )}
+                </div>
               </div>
               <VerifiedBadge verified={r.verified} />
             </li>

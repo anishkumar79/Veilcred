@@ -12,8 +12,42 @@
  *
  * Run with: npm test
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import { submitVerification, type CredentialInput } from "../src/utils/contract";
+
+beforeAll(() => {
+  // Mock window.midnight to simulate Lace/1am wallet extension for E2E tests
+  (global as any).window = {
+    midnight: {
+      mnLace: {
+        enable: vi.fn().mockResolvedValue({
+          state: vi.fn().mockResolvedValue({
+            subscribe: (observer: any) => {
+              observer.next({ address: "addr_preprod1test_mock_wallet" });
+              return { unsubscribe: vi.fn() };
+            }
+          }),
+          signData: vi.fn().mockResolvedValue("signature"),
+        })
+      }
+    }
+  };
+  
+  // Mock crypto for hashing
+  if (!(global as any).crypto) {
+    const crypto = require('crypto');
+    (global as any).crypto = {
+      subtle: {
+        digest: async (algo: string, data: Uint8Array) => {
+          return crypto.createHash('sha256').update(data).digest();
+        }
+      },
+      getRandomValues: (arr: Uint8Array) => {
+        return crypto.randomFillSync(arr);
+      }
+    };
+  }
+});
 
 const baseInput: CredentialInput = {
   gateLabel: "Age 18+ gate",

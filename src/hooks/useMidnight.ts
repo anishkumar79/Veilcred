@@ -33,7 +33,10 @@ export type MidnightStatus =
  */
 export function useMidnight() {
   const [status, setStatus] = useState<MidnightStatus>("idle");
-  const [wallet, setWallet] = useState<WalletState | null>(null);
+  const [wallet, setWallet] = useState<WalletState | null>(() => {
+    const saved = localStorage.getItem("veilcred_wallet");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [error, setError] = useState<string | null>(null);
   const [ledger, setLedger] = useState<VerificationRecord[]>([]);
 
@@ -43,6 +46,7 @@ export function useMidnight() {
     try {
       const w = await connectWallet();
       setWallet(w);
+      localStorage.setItem("veilcred_wallet", JSON.stringify(w));
       setStatus("connected");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to connect wallet");
@@ -53,6 +57,7 @@ export function useMidnight() {
   const disconnect = useCallback(async () => {
     await disconnectWallet();
     setWallet(null);
+    localStorage.removeItem("veilcred_wallet");
     setStatus("idle");
   }, []);
 
