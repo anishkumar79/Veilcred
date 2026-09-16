@@ -13,6 +13,13 @@
  * Run with: npm test
  */
 import { describe, it, expect, beforeAll, vi } from "vitest";
+
+// Mock Midnight SDK dynamic imports for tests
+vi.mock('@midnight-ntwrk/midnight-js-dapp-connector-wallet-provider', () => ({ DAppConnectorWalletProvider: class {} }));
+vi.mock('@midnight-ntwrk/midnight-js', () => ({ MidnightClient: { build: vi.fn().mockResolvedValue({ callTx: { verifyThreshold: vi.fn().mockResolvedValue({ public: { txHash: '0x123', passes: undefined } }) } }) } }));
+vi.mock('@midnight-ntwrk/midnight-js-http-client-proof-provider', () => ({ httpClientProofProvider: vi.fn() }));
+vi.mock('@midnight-ntwrk/midnight-js-indexer-public-data-provider', () => ({ indexerPublicDataProvider: vi.fn() }));
+
 import { submitVerification, type CredentialInput } from "../src/utils/contract";
 
 beforeAll(() => {
