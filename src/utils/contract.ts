@@ -230,7 +230,7 @@ export async function submitVerification(
     const deployed = await getDeployedContractInfo();
     const address = deployed?.contractAddress || VERIFIED_PREPROD_CONTRACT_ADDRESS;
     
-    const client = await findDeployedContract(providers, {
+    const client = await findDeployedContract(providers as any, {
       contractAddress: address,
       compiledContract,
       privateStateId: 'veilcred-private-state',
@@ -243,7 +243,7 @@ export async function submitVerification(
     const digest = await crypto.subtle.digest("SHA-256", data);
     const gateIdBytes = new Uint8Array(digest);
     
-    const tx = await client.callTx.verifyThreshold(
+    const tx = await (client.callTx as any).verifyThreshold(
       gateIdBytes,
       BigInt(input.threshold),
       BigInt(now)
