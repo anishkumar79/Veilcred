@@ -10,6 +10,7 @@ import {
 } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 import type { FinalizedTransaction, TransactionId } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 import type { UnboundTransaction } from "@midnight-ntwrk/midnight-js-types";
+import { createWalletProvider } from "@midnight-ntwrk/midnight-js-types";
 
 // The DApp connector v4 Wallet API interface that implements shielded operations
 export interface WalletConnectorAPI {
@@ -24,7 +25,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
   const zkConfigPath = window.location.origin;
   
   // Type generic is `any` here to bypass needing the generated circuit keys interface
-  const keyMaterialProvider = new FetchZkConfigProvider<any>(zkConfigPath, fetch.bind(window));
+  const keyMaterialProvider = new FetchZkConfigProvider<any>(zkConfigPath, { fetchFunc: fetch.bind(window) });
   
   // Get the active network configuration from the 1am wallet
   const config = await api.getConfiguration();
@@ -48,13 +49,12 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     zkConfigProvider: keyMaterialProvider,
     proofProvider: httpClientProofProvider(config.proverServerUri || 'https://proof-server.preprod.midnight.network', keyMaterialProvider),
     publicDataProvider: indexerPublicDataProvider(config.indexerUri, config.indexerWsUri),
-    walletProvider: {
+    walletProvider: createWalletProvider({
       getCoinPublicKey: () => shieldedAddresses.shieldedCoinPublicKey,
       getEncryptionPublicKey: () => shieldedAddresses.shieldedEncryptionPublicKey,
       balanceTx: async (tx: UnboundTransaction): Promise<FinalizedTransaction> => {
         const serializedTx = toHex(tx.serialize());
-        // Wrap the payload with version 'v9' as expected by the 1am wallet connector
-        const received = await (api.balanceUnsealedTransaction as any)({ version: 'v9', tx: serializedTx });
+        const received = await api.balanceUnsealedTransaction(serializedTx);
         return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
           "signature",
           "proof",
@@ -62,10 +62,10 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
           fromHex(received.tx),
         );
       },
-    } as any, // Typed as any to bypass strict internal typing for the hackathon
+    }),
     midnightProvider: {
       submitTx: async (tx: FinalizedTransaction): Promise<TransactionId> => {
-        await (api.submitTransaction as any)({ version: 'v9', tx: toHex(tx.serialize()) });
+        await api.submitTransaction(toHex(tx.serialize()));
         const txIdentifiers = tx.identifiers();
         return txIdentifiers[0]!;
       },
