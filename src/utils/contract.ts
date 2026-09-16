@@ -239,8 +239,9 @@ export async function submitVerification(
     
     // Execute the contract circuit
     // This prompts the wallet for a signature and submits to the Midnight blockchain
-    const gateIdHex = await sha256Hex(input.gateLabel);
-    const gateIdBytes = new TextEncoder().encode(gateIdHex);
+    const data = new TextEncoder().encode(input.gateLabel);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    const gateIdBytes = new Uint8Array(digest);
     
     const tx = await client.callTx.verifyThreshold(
       gateIdBytes,
