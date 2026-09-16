@@ -16,28 +16,22 @@ jobs:
           cd preprod-deployment
           npm install
           npm install --no-save tsx
-          node infra/scripts/patch-wallet-sdk.mjs
 
-      - name: Copy Contract
+      - name: Copy pre-compiled contract artifacts into deployment workspace
         run: |
-          cp contracts/veilcred.compact preprod-deployment/contracts/src/bboard.compact
+          # The contract is already compiled with compactc 0.19.0 and committed to the repo.
+          # We just copy the managed artifacts into the location the deployment CLI expects.
+          mkdir -p preprod-deployment/contracts/src/managed/bboard
+          cp -r managed/veilcred/contract preprod-deployment/contracts/src/managed/bboard/contract
+          cp -r managed/veilcred/keys     preprod-deployment/contracts/src/managed/bboard/keys
+          cp -r managed/veilcred/zkir     preprod-deployment/contracts/src/managed/bboard/zkir
+          echo "Contract artifacts copied successfully."
 
-      - name: Compile Contract
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
-          compact update 0.19.0
-          compact --version
-          cd preprod-deployment/contracts
-          compact compile src/bboard.compact ./src/managed/bboard
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
       - name: Build Contract Bindings
         run: |
           cd preprod-deployment/contracts
           npm run build
-          
+
       - name: Increase swap space
         run: |
           sudo swapoff -a || true
