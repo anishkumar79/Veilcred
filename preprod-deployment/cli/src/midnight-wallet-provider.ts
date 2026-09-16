@@ -139,7 +139,7 @@ export class MidnightWalletProvider implements MidnightProvider, WalletProvider 
     };
 
     const seeds = seed ? WalletSeeds.fromMasterSeed(seed) : WalletSeeds.generateRandom();
-    const keystore = createKeystore(seeds.unshielded, env.walletNetworkId as any);
+    const keystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded as any }, env.walletNetworkId as any);
 
     const unshieldedWallet = WalletFactory.createUnshieldedWallet(walletConfig as any, keystore);
     const dustWallet = WalletFactory.createDustWallet(walletConfig as any, seeds.dust, dustOptions);
