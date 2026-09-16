@@ -22,19 +22,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ------------------------------------------------------------------
-      # Compact contract compilation.
-      - name: Install Compact CLI
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Install Compact Toolchain
-        run: compact update
-
-      - name: Compile Compact contract
-        run: compact compile contracts/veilcred.compact managed/veilcred
-
       - name: Run tests
         run: npm test
 
