@@ -56,7 +56,7 @@ export async function connectWallet(): Promise<WalletState> {
   }
 
   // Connect to trigger the popup
-  await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
+  const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   
   // api.state() returns an RxJS Observable in the new Midnight API
   const state$ = await api.state();
