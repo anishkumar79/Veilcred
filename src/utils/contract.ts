@@ -56,7 +56,7 @@ export async function connectWallet(): Promise<WalletState> {
   }
 
   // Connect to trigger the popup
-  const api = await (walletProvider.connect ? walletProvider.connect() : (walletProvider as any).enable());
+  await (walletProvider.connect ? walletProvider.connect() : (walletProvider as any).enable());
   
   // The DApp connector v4 does not expose the user's address directly via state()
   // The wallet signs transactions internally, so we don't strictly need the address here.
