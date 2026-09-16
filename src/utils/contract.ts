@@ -56,7 +56,7 @@ export async function connectWallet(): Promise<WalletState> {
   }
 
   // Connect to trigger the popup
-  await (walletProvider.connect ? walletProvider.connect() : (walletProvider as any).enable());
+  await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   
   // The DApp connector v4 does not expose the user's address directly via state()
   // The wallet signs transactions internally, so we don't strictly need the address here.
@@ -111,7 +111,7 @@ export async function deployVeilcredContract(): Promise<string> {
     
     if (mnLace) {
       // Try both connection methods depending on the Lace version
-      const api = await (mnLace.connect ? mnLace.connect() : (mnLace as any).enable());
+      const api = await (mnLace.connect ? mnLace.connect("preprod") : (mnLace as any).enable());
       
       // api.state() returns an RxJS Observable in the new Midnight API
       const state$ = await api.state();
@@ -166,7 +166,7 @@ export async function submitVerification(
   const walletProvider = midnightObj.mnLace || midnightObj.lace || Object.values(midnightObj)[0];
   if (!walletProvider) throw new Error("No compatible wallet provider found");
 
-  const api = await (walletProvider.connect ? walletProvider.connect() : (walletProvider as any).enable());
+  const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   
   try {
     // Import SDK and compiled contract dynamically to avoid build errors if not compiled yet
