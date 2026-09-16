@@ -6,7 +6,7 @@ import { PreprodRemoteConfig } from '../config.js';
 import {
   FaucetClient,
 } from '@midnight-ntwrk/testkit-js';
-import { MidnightWalletProvider } from './midnight-wallet-provider.js';
+import { MidnightWalletProvider } from '../midnight-wallet-provider.js';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
