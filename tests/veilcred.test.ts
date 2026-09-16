@@ -15,16 +15,35 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 
 // Mock Midnight SDK dynamic imports for tests
-vi.mock('@midnight-ntwrk/midnight-js-dapp-connector-wallet-provider', () => ({ DAppConnectorWalletProvider: class {} }));
-vi.mock('@midnight-ntwrk/midnight-js', () => ({ MidnightClient: { build: vi.fn().mockResolvedValue({ callTx: { verifyThreshold: vi.fn().mockResolvedValue({ public: { txHash: '0x123', passes: undefined } }) } }) } }));
+vi.mock('@midnight-ntwrk/midnight-js', () => ({ 
+  MidnightClient: { 
+    build: vi.fn().mockResolvedValue({ 
+      callTx: { 
+        verifyThreshold: vi.fn().mockImplementation(async (gateIdHex, threshold, now, { privateState }) => {
+          const crypto = require('crypto');
+          const nullifierHash = crypto.createHash('sha256').update(`${gateIdHex}:${privateState.issuerKey}:${privateState.holderSecret}`).digest('hex');
+          return { 
+            public: { 
+              txHash: '0x123', 
+              passes: privateState.attributeValue >= threshold,
+              nullifier: nullifierHash
+            } 
+          };
+        }) 
+      } 
+    }) 
+  } 
+}));
 vi.mock('@midnight-ntwrk/midnight-js-http-client-proof-provider', () => ({ httpClientProofProvider: vi.fn() }));
 vi.mock('@midnight-ntwrk/midnight-js-indexer-public-data-provider', () => ({ indexerPublicDataProvider: vi.fn() }));
+vi.mock('../src/utils/midnightProviders', () => ({ createMidnightProviders: vi.fn().mockResolvedValue({}) }));
 
 import { submitVerification, type CredentialInput } from "../src/utils/contract";
 
 beforeAll(() => {
   // Mock window.midnight to simulate Lace/1am wallet extension for E2E tests
   (global as any).window = {
+    location: { origin: 'http://localhost' },
     midnight: {
       mnLace: {
         enable: vi.fn().mockResolvedValue({
