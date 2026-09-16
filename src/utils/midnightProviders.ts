@@ -38,7 +38,8 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     privateStateProvider: {
         get: async () => ({}),
         set: async () => {},
-        remove: async () => {}
+        remove: async () => {},
+        setContractAddress: async () => {}
     } as any,
     zkConfigProvider: keyMaterialProvider,
     proofProvider: httpClientProofProvider(config.proverServerUri || 'https://proof-server.preprod.midnight.network', keyMaterialProvider),
