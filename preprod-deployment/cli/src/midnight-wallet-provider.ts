@@ -120,6 +120,9 @@ export class MidnightWalletProvider implements MidnightProvider, WalletProvider 
     };
 
     const walletConfig = {
+      forks: {
+        v9: '2000000'
+      },
       indexerClientConnection: {
         indexerHttpUrl: env.indexer,
         indexerWsUrl: env.indexerWS,
