@@ -2,7 +2,8 @@ import { WebSocket } from 'ws';
 globalThis.WebSocket = WebSocket as unknown as typeof globalThis.WebSocket;
 
 import fs from 'node:fs';
-import { PreprodRemoteConfig } from '../config.js';
+import path from 'node:path';
+import { PreprodRemoteConfig, currentDir } from '../config.js';
 import {
   FaucetClient,
 } from '@midnight-ntwrk/testkit-js';
@@ -112,7 +113,35 @@ async function main() {
   console.log(`DUST available: ${dustBalance}! Deploying contract...`);
 
   console.log("Initializing providers...");
-  const zkConfigProvider = new NodeZkConfigProvider(config.zkConfigPath);
+  let zkPath = config.zkConfigPath;
+  const zkCandidates = [
+    config.zkConfigPath,
+    path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'bboard'),
+    path.resolve(currentDir, '..', '..', 'contracts', 'dist', 'managed', 'bboard'),
+    path.resolve(process.cwd(), '../contracts/src/managed/bboard'),
+    path.resolve(process.cwd(), 'contracts/src/managed/bboard'),
+    path.resolve(process.cwd(), '../../managed/veilcred'),
+    path.resolve(process.cwd(), '../managed/veilcred'),
+    path.resolve(process.cwd(), 'managed/veilcred'),
+  ];
+  for (const candidate of zkCandidates) {
+    if (fs.existsSync(candidate) && fs.existsSync(path.join(candidate, 'keys')) && fs.existsSync(path.join(candidate, 'keys', 'registerIssuer.verifier'))) {
+      zkPath = candidate;
+      break;
+    }
+  }
+
+  console.log(`Using ZK config path: ${zkPath}`);
+  try {
+    console.log("ZK directory contents:", fs.readdirSync(zkPath));
+    if (fs.existsSync(path.join(zkPath, 'keys'))) {
+      console.log("Keys directory contents:", fs.readdirSync(path.join(zkPath, 'keys')));
+    }
+  } catch (e: any) {
+    console.warn("Could not list ZK directory:", e.message);
+  }
+
+  const zkConfigProvider = new NodeZkConfigProvider(zkPath, { verify: 'warn' });
   const storagePassword = "TempPassword123!Secure";
 
   const providers = {
@@ -181,8 +210,11 @@ async function main() {
       }
     }
     success = true;
-  } catch (err) {
+  } catch (err: any) {
     console.error("Deployment failed:", err);
+    if (err?.cause) {
+      console.error("Deployment failure cause:", err.cause);
+    }
   } finally {
     await (walletProvider as any).stop?.();
     await testEnv.shutdown();

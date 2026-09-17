@@ -22,10 +22,13 @@ jobs:
           # The contract is already compiled with compactc 0.19.0 and committed to the repo.
           # We just copy the managed artifacts into the location the deployment CLI expects.
           mkdir -p preprod-deployment/contracts/src/managed/bboard
-          cp -r managed/veilcred/contract preprod-deployment/contracts/src/managed/bboard/contract
-          cp -r managed/veilcred/keys     preprod-deployment/contracts/src/managed/bboard/keys
-          cp -r managed/veilcred/zkir     preprod-deployment/contracts/src/managed/bboard/zkir
-          echo "Contract artifacts copied successfully."
+          cp -r managed/veilcred/* preprod-deployment/contracts/src/managed/bboard/
+          mkdir -p preprod-deployment/contracts/dist/managed/bboard
+          cp -r managed/veilcred/* preprod-deployment/contracts/dist/managed/bboard/
+          echo "Contract artifacts copied successfully:"
+          ls -la preprod-deployment/contracts/src/managed/bboard
+          ls -la preprod-deployment/contracts/src/managed/bboard/keys
+          ls -la preprod-deployment/contracts/src/managed/bboard/compiler
 
       - name: Install contracts dependencies (with compact-runtime 0.19.0)
         run: |
