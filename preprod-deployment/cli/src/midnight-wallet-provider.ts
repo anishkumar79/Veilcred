@@ -36,7 +36,6 @@ import {
 } from '@midnight-ntwrk/testkit-js';
 import {
   createKeystore,
-  DefaultForkSchedule,
   NoOpTransactionHistoryStorage,
 } from '@midnight-ntwrk/wallet-sdk';
 
@@ -121,7 +120,9 @@ export class MidnightWalletProvider implements MidnightProvider, WalletProvider 
     };
 
     const walletConfig = {
-      forks: DefaultForkSchedule,
+      forks: {
+        v9: 2000000n
+      },
       indexerClientConnection: {
         indexerHttpUrl: env.indexer,
         indexerWsUrl: env.indexerWS,
