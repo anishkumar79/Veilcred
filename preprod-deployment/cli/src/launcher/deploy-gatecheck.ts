@@ -55,29 +55,30 @@ async function main() {
   const walletProvider = await MidnightWalletProvider.build(logger, envConfiguration, seed);
   await walletProvider.start();
 
-  console.log("Syncing unshielded wallet with Preprod...");
-  const unshieldedState = await walletProvider.wallet.unshielded.waitForSyncedState();
-  const nightBalance = (unshieldedState as any).balances?.[unshieldedToken().raw] ?? 0n;
-  console.log(`Current tNIGHT balance: ${nightBalance}`);
+  console.log("Syncing unshielded wallet with Preprod (Skipped to avoid hanging)...");
+  // const unshieldedState = await walletProvider.wallet.unshielded.waitForSyncedState();
+  // const nightBalance = (unshieldedState as any).balances?.[unshieldedToken().raw] ?? 0n;
+  // console.log(`Current tNIGHT balance: ${nightBalance}`);
 
-  if (nightBalance === 0n) {
-    console.log("Wallet has 0 tNIGHT. Requesting funds from faucet...");
-    const unshieldedAddress = (unshieldedState as any).address?.asString?.() ?? 'unknown';
-    if (envConfiguration.faucet) {
-      try {
-        await new FaucetClient(envConfiguration.faucet, logger).requestTokens(unshieldedAddress);
-        console.log("Faucet request sent. Waiting for tokens...");
-      } catch (e: any) {
-        console.warn(`Faucet request warning: ${e.message}`);
-      }
-    }
-    await Rx.firstValueFrom(
-      (walletProvider.wallet.unshielded as any).state.pipe(
-        Rx.filter((s: any) => (s.balances?.[unshieldedToken().raw] ?? 0n) > 0n),
-        Rx.timeout(300000),
-      )
-    );
-  }
+  // if (nightBalance === 0n) {
+  //   console.log("Wallet has 0 tNIGHT. Requesting funds from faucet...");
+  //   const unshieldedAddress = (unshieldedState as any).address?.asString?.() ?? 'unknown';
+  //   if (envConfiguration.faucet) {
+  //     try {
+  //       await new FaucetClient(envConfiguration.faucet, logger).requestTokens(unshieldedAddress);
+  //       console.log("Faucet request sent. Waiting for tokens...");
+  //     } catch (e: any) {
+  //       console.warn(`Faucet request warning: ${e.message}`);
+  //     }
+  //   }
+  //   await Rx.firstValueFrom(
+  //     (walletProvider.wallet.unshielded as any).state.pipe(
+  //       Rx.filter((s: any) => (s.balances?.[unshieldedToken().raw] ?? 0n) > 0n),
+  //       Rx.timeout(300000),
+  //     )
+  //   );
+  // }
+  console.log("Proceeding to deploy the contract with the provided seed...");
 
   console.log("Syncing DUST wallet with Preprod...");
   let lastLoggedPct = -1;
