@@ -122,7 +122,7 @@ export class MidnightWalletProvider implements MidnightProvider, WalletProvider 
 
     const walletConfig = {
       forks: {
-        v9: 2000000n
+        v9: 0n
       },
       indexerClientConnection: {
         indexerHttpUrl: env.indexer,

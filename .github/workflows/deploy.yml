@@ -56,6 +56,19 @@ jobs:
           sudo swapon /swapfile_extra
           free -h
 
+      - name: Restore Wallet Database Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.midnight
+            preprod-deployment/cli/bboard-private-state
+            preprod-deployment/cli/wallet-state
+            preprod-deployment/cli/level
+            preprod-deployment/cli/.level
+          key: ${{ runner.os }}-midnight-wallet-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-midnight-wallet-
+
       - name: Deploy Contract
         run: |
           cd preprod-deployment/cli
@@ -63,6 +76,18 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192 --expose-gc"
           WALLET_SEED: ${{ secrets.WALLET_SEED }}
+
+      - name: Save Wallet Database Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.midnight
+            preprod-deployment/cli/bboard-private-state
+            preprod-deployment/cli/wallet-state
+            preprod-deployment/cli/level
+            preprod-deployment/cli/.level
+          key: ${{ runner.os }}-midnight-wallet-${{ github.run_id }}
 
       - name: Display Deployment Results
         if: always()
