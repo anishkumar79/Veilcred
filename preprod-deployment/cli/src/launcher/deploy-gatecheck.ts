@@ -13,6 +13,7 @@ import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-p
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { createWalletProvider, createMidnightProvider } from '@midnight-ntwrk/midnight-js-types';
 import { CompiledBBoardContractContract } from '@midnight-ntwrk/bboard-contract';
 import { createLogger } from '../logger-utils.js';
 import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
@@ -154,8 +155,8 @@ async function main() {
     publicDataProvider: indexerPublicDataProvider(envConfiguration.indexer, envConfiguration.indexerWS),
     zkConfigProvider,
     proofProvider: httpClientProofProvider(envConfiguration.proofServer, zkConfigProvider),
-    walletProvider,
-    midnightProvider: walletProvider,
+    walletProvider: createWalletProvider(walletProvider as any),
+    midnightProvider: createMidnightProvider((tx: any) => walletProvider.submitTx(tx)),
   };
 
   console.log("Deploying contract...");

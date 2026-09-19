@@ -49,6 +49,7 @@ type UnshieldedKeystore = {
  * Handles transaction balancing, submission, and wallet state management.
  */
 export class MidnightWalletProvider implements MidnightProvider, WalletProvider {
+  readonly supportedEras = ['v9'] as const;
   logger: Logger;
   readonly env: EnvironmentConfiguration;
   readonly wallet: WalletFacade;
