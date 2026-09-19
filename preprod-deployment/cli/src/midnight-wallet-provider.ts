@@ -123,6 +123,7 @@ export class MidnightWalletProvider implements MidnightProvider, WalletProvider 
       forks: {
         v9: 2000000n
       },
+      chainVersionProbe: () => Promise.resolve(2000000n),
       indexerClientConnection: {
         indexerHttpUrl: env.indexer,
         indexerWsUrl: env.indexerWS,
