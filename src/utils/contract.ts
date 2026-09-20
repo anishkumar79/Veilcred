@@ -204,7 +204,8 @@ export async function submitVerification(
   }
   
   try {
-    const { createMidnightProviders } = await import("./midnightProviders.js");
+    const { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } = await import("./midnightProviders.js");
+    resetLastSubmittedTxId();
     const providers = await createMidnightProviders(api);
     
     // Convert witnesses into proper 32-byte arrays for Compact runtime
@@ -262,7 +263,16 @@ export async function submitVerification(
     let tx: any;
     try {
       // registerIssuer proves in ~1 second on ProofStation and prompts 1AM approval popup immediately
-      tx = await (client.callTx as any).registerIssuer(issuerBytes);
+      const callPromise = (client.callTx as any).registerIssuer(issuerBytes);
+      const earlyReturnPromise = new Promise<{ early: true }>((resolve) => {
+        const check = setInterval(() => {
+          if (getLastSubmittedTxId()) {
+            clearInterval(check);
+            setTimeout(() => resolve({ early: true }), 1500);
+          }
+        }, 300);
+      });
+      tx = await Promise.race([callPromise, earlyReturnPromise]);
       console.log("registerIssuer on-chain tx succeeded:", tx);
     } catch (regErr) {
       console.warn("registerIssuer skipped or failed, trying verifyThreshold:", regErr);
@@ -271,14 +281,23 @@ export async function submitVerification(
         BigInt(input.threshold),
         BigInt(now)
       );
+      const earlyReturnPromise = new Promise<{ early: true }>((resolve) => {
+        const check = setInterval(() => {
+          if (getLastSubmittedTxId()) {
+            clearInterval(check);
+            setTimeout(() => resolve({ early: true }), 1500);
+          }
+        }, 300);
+      });
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 60000)
       );
-      tx = await Promise.race([callPromise, timeoutPromise]);
+      tx = await Promise.race([callPromise, earlyReturnPromise, timeoutPromise]);
     }
     
     // Extract real transaction hash from on-chain submission
-    const rawTxHash = tx?.public?.txHash || tx?.public?.txId || tx?.txHash || tx;
+    const submittedId = getLastSubmittedTxId();
+    const rawTxHash = submittedId || tx?.public?.txHash || tx?.public?.txId || tx?.txHash || tx;
     const cleanTxHash = String(rawTxHash || "").replace(/^0x/, "");
     const passes = input.attributeValue >= input.threshold;
     

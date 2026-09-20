@@ -11,6 +11,7 @@ import {
 import type { FinalizedTransaction, TransactionId } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 import type { UnboundTransaction } from "@midnight-ntwrk/midnight-js-types";
 import { createWalletProvider } from "@midnight-ntwrk/midnight-js-types";
+import { blake2b } from "@noble/hashes/blake2.js";
 
 // The DApp connector v4 Wallet API interface that implements shielded operations
 export interface WalletConnectorAPI {
@@ -18,6 +19,14 @@ export interface WalletConnectorAPI {
   getShieldedAddresses(): Promise<{ shieldedCoinPublicKey: string; shieldedEncryptionPublicKey: string }>;
   balanceUnsealedTransaction(tx: string): Promise<{ tx: string }>;
   submitTransaction(tx: string): Promise<void>;
+}
+
+export let lastSubmittedTxId: string | null = null;
+export function getLastSubmittedTxId(): string | null {
+  return lastSubmittedTxId;
+}
+export function resetLastSubmittedTxId(): void {
+  lastSubmittedTxId = null;
 }
 
 export async function createMidnightProviders(api: WalletConnectorAPI) {
@@ -63,18 +72,64 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     zkConfigProvider: keyMaterialProvider,
     proofProvider: httpClientProofProvider(proverUri, keyMaterialProvider),
     publicDataProvider: (() => {
-      const base = indexerPublicDataProvider(indexerUri, indexerWsUri);
-      return {
-        ...base,
-        watchForDeployTxData: async (addr: string) => {
-          const data: any = await base.watchForDeployTxData(addr);
-          return data && typeof data === "object" ? { ...data, version: "v9" } : data;
-        },
-        watchForTxData: async (txId: string) => {
-          const data: any = await base.watchForTxData(txId);
-          return data && typeof data === "object" ? { ...data, version: "v9" } : data;
-        },
-      } as any;
+      const base: any = indexerPublicDataProvider(indexerUri, indexerWsUri);
+      
+      const wrapState = (state: any) => {
+        if (!state || typeof state !== "object") return state;
+        if (!state.version) {
+          try {
+            state.version = "v9";
+          } catch {}
+        }
+        return state;
+      };
+
+      const origWatchDeploy = base.watchForDeployTxData?.bind(base);
+      if (origWatchDeploy) {
+        base.watchForDeployTxData = async (addr: string) => {
+          const data = await origWatchDeploy(addr);
+          return wrapState(data);
+        };
+      }
+      const origWatchTx = base.watchForTxData?.bind(base);
+      if (origWatchTx) {
+        base.watchForTxData = async (txId: string) => {
+          const data = await origWatchTx(txId);
+          return wrapState(data);
+        };
+      }
+      const origQueryDeploy = base.queryDeployContractState?.bind(base);
+      if (origQueryDeploy) {
+        base.queryDeployContractState = async (addr: string) => {
+          const data = await origQueryDeploy(addr);
+          return wrapState(data);
+        };
+      }
+      const origQueryContract = base.queryContractState?.bind(base);
+      if (origQueryContract) {
+        base.queryContractState = async (addr: string, config?: any) => {
+          const data = await origQueryContract(addr, config);
+          return wrapState(data);
+        };
+      }
+      const origQueryZswap = base.queryZSwapAndContractState?.bind(base);
+      if (origQueryZswap) {
+        base.queryZSwapAndContractState = async (addr: string, config?: any) => {
+          const data = await origQueryZswap(addr, config);
+          if (Array.isArray(data) && data[1]) {
+            data[1] = wrapState(data[1]);
+          }
+          return data;
+        };
+      }
+      const origQueryRaw = base.queryRawContractState?.bind(base);
+      if (origQueryRaw) {
+        base.queryRawContractState = async (addr: string, config?: any) => {
+          const data = await origQueryRaw(addr, config);
+          return wrapState(data);
+        };
+      }
+      return base;
     })(),
     walletProvider: createWalletProvider({
       getCoinPublicKey: () => shieldedCoinPk,
@@ -119,14 +174,20 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     }),
     midnightProvider: {
       submitTx: async (tx: FinalizedTransaction): Promise<TransactionId> => {
-        const txHex = toHex(tx.serialize());
-        console.log("Submitting transaction to 1AM wallet for approval popup...");
+        const txBytes = tx.serialize();
+        const txHex = toHex(txBytes);
+        const computedExtrinsicHash = toHex(blake2b(txBytes, { dkLen: 32 }));
+        console.log("Submitting transaction to 1AM wallet for approval popup, length:", txHex.length, "extrinsicHash:", computedExtrinsicHash);
+        
+        const midnightObj = (window as any).midnight || {};
+        const oneAm = midnightObj["1am"] || midnightObj.oneam || midnightObj["1AM"] || (api as any);
+        const targetApi = typeof (api as any)?.submitTransaction === "function" ? api : (typeof oneAm?.submitTransaction === "function" ? oneAm : api);
+
         let res: any;
-        const ap = api as any;
-        if (typeof ap.submitTransaction === "function") {
-          res = await ap.submitTransaction(txHex);
-        } else if (typeof ap.submitTx === "function") {
-          res = await ap.submitTx(txHex);
+        if (typeof (targetApi as any)?.submitTransaction === "function") {
+          res = await (targetApi as any).submitTransaction(txHex);
+        } else if (typeof (targetApi as any)?.submitTx === "function") {
+          res = await (targetApi as any).submitTx(txHex);
         } else {
           throw new Error("Connected wallet does not support submitTransaction");
         }
@@ -136,12 +197,13 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
         if (typeof res === "string" && res.length > 0) {
           txId = res.replace(/^0x/, "");
         } else if (typeof res === "object" && res !== null) {
-          txId = (res.txHash || res.hash || res.transactionHash || res.txId || res.id || "")?.replace(/^0x/, "");
+          const r = res as Record<string, any>;
+          txId = (r.txHash || r.hash || r.transactionHash || r.txId || r.id || "")?.replace(/^0x/, "");
         }
         if (!txId) {
-          const txIdentifiers = tx.identifiers();
-          txId = txIdentifiers[0] ? String(txIdentifiers[0]).replace(/^0x/, "") : "";
+          txId = computedExtrinsicHash;
         }
+        lastSubmittedTxId = txId;
         return txId as any;
       },
     },

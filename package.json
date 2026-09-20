@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "mkdir -p public/keys public/zkir public/compiler && cp -r managed/veilcred/keys/* public/keys/ && cp -r managed/veilcred/zkir/* public/zkir/ && cp -r managed/veilcred/compiler/* public/compiler/ && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
