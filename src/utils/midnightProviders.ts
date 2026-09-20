@@ -62,7 +62,20 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     } as any,
     zkConfigProvider: keyMaterialProvider,
     proofProvider: httpClientProofProvider(proverUri, keyMaterialProvider),
-    publicDataProvider: indexerPublicDataProvider(indexerUri, indexerWsUri),
+    publicDataProvider: (() => {
+      const base = indexerPublicDataProvider(indexerUri, indexerWsUri);
+      return {
+        ...base,
+        watchForDeployTxData: async (addr: string) => {
+          const data: any = await base.watchForDeployTxData(addr);
+          return data && typeof data === "object" ? { ...data, version: "v9" } : data;
+        },
+        watchForTxData: async (txId: string) => {
+          const data: any = await base.watchForTxData(txId);
+          return data && typeof data === "object" ? { ...data, version: "v9" } : data;
+        },
+      } as any;
+    })(),
     walletProvider: createWalletProvider({
       getCoinPublicKey: () => shieldedCoinPk,
       getEncryptionPublicKey: () => shieldedEncPk,
