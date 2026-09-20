@@ -63,7 +63,9 @@ vi.mock('../src/utils/midnightProviders', () => ({
       set: vi.fn(),
       remove: vi.fn()
     }
-  }) 
+  }),
+  getLastSubmittedTxId: vi.fn().mockReturnValue(null),
+  resetLastSubmittedTxId: vi.fn()
 }));
 
 import { submitVerification, type CredentialInput } from "../src/utils/contract";
