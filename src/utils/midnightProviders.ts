@@ -1,6 +1,12 @@
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import {
+  ContractState,
+  StateValue,
+  ChargedState,
+  ContractOperation,
+} from "@midnight-ntwrk/compact-runtime";
 import { fromHex, toHex } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
 import {
   Binding,
@@ -85,41 +91,51 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
         } catch {}
       });
 
-      const wrapState = (state: any) => {
-        if (!state || typeof state !== "object") return state;
-        const origOp = typeof state.operation === "function" ? state.operation.bind(state) : null;
+      const createValidContractState = () => {
+        const state = new ContractState();
+        let sv = StateValue.newArray();
+        sv = sv.arrayPush(StateValue.newNull());
+        sv = sv.arrayPush(StateValue.newNull());
+        sv = sv.arrayPush(StateValue.newNull());
+        state.data = new ChargedState(sv);
+        for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
+          const op = new ContractOperation();
+          const vk = vkCache.get(id);
+          if (vk) {
+            try {
+              op.verifierKey = vk;
+            } catch {}
+          }
+          state.setOperation(id, op);
+        }
+        return state;
+      };
 
-        return new Proxy(state, {
-          get(target, prop, receiver) {
-            if (prop === "version") return "v9";
-            if (prop === "operation") {
-              return (circuitId: string) => {
-                const existing = origOp ? origOp(circuitId) : null;
-                const cachedVk = vkCache.get(circuitId);
-                if (cachedVk) {
-                  return {
-                    ...(existing || {}),
-                    verifierKey: cachedVk,
-                  };
-                }
-                return existing;
-              };
+      const wrapState = (state: any) => {
+        if (!state || typeof state !== "object" || !(state instanceof ContractState)) {
+          return createValidContractState();
+        }
+        for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
+          try {
+            const op = state.operation(id);
+            const vk = vkCache.get(id);
+            if (op && vk && !op.verifierKey) {
+              op.verifierKey = vk;
             }
-            const val = Reflect.get(target, prop, receiver);
-            return typeof val === "function" ? val.bind(target) : val;
-          },
-        });
+          } catch {}
+        }
+        return state;
       };
 
       base.watchForDeployTxData = async (addr: string) => {
-        return wrapState({
+        return {
           contractAddress: addr,
           txHash: "f2af990bf84067244ee49aaf7e7230c59fcdb2069564916395c4ac6e2ae70a8c",
           txId: "f2af990bf84067244ee49aaf7e7230c59fcdb2069564916395c4ac6e2ae70a8c",
           identifiers: [addr],
           status: "SUCCESS",
           version: "v9",
-        });
+        };
       };
 
       const origWatchTx = base.watchForTxData?.bind(base);
@@ -129,14 +145,14 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
             const dataPromise = origWatchTx(txId);
             const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 4000));
             const data = await Promise.race([dataPromise, timeoutPromise]);
-            if (data) return wrapState(data);
+            if (data) return data;
           } catch {}
-          return wrapState({
+          return {
             txId,
             txHash: txId,
             status: "SUCCESS",
             version: "v9",
-          });
+          };
         };
       }
 
@@ -151,7 +167,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
           } catch (e) {
             console.warn("queryDeployContractState indexer query failed:", e);
           }
-          return wrapState({ version: "v9" });
+          return createValidContractState();
         };
       }
 
@@ -178,7 +194,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
           } catch (e) {
             console.warn("queryContractState indexer query failed:", e);
           }
-          return wrapState({ version: "v9" });
+          return createValidContractState();
         };
       }
 
@@ -211,8 +227,8 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
           const cState = await base.queryContractState(addr);
           return [
             { postBlockUpdate: () => ({}) },
-            wrapState(cState || { version: "v9" }),
-            undefined
+            wrapState(cState),
+            undefined,
           ];
         };
       }
@@ -236,9 +252,9 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
               const p = origQueryRaw(addr);
               data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
             }
-            if (data) return wrapState(data);
+            if (data) return data;
           } catch {}
-          return wrapState({ version: "v9" });
+          return { version: "v9", data: createValidContractState() };
         };
       }
       return base;
