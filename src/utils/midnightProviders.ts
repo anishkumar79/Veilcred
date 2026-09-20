@@ -159,9 +159,21 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
       if (origQueryContract) {
         base.queryContractState = async (addr: string, config?: any) => {
           try {
-            const dataPromise = origQueryContract(addr, config);
-            const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2500));
-            const data = await Promise.race([dataPromise, timeoutPromise]);
+            let data: any;
+            if (config) {
+              try {
+                const p = origQueryContract(addr, config);
+                data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+              } catch {}
+            }
+            if (!data) {
+              const p = origQueryContract(addr, null);
+              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+            }
+            if (!data) {
+              const p = origQueryContract(addr);
+              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+            }
             if (data) return wrapState(data);
           } catch (e) {
             console.warn("queryContractState indexer query failed:", e);
@@ -174,17 +186,34 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
       if (origQueryZswap) {
         base.queryZSwapAndContractState = async (addr: string, config?: any) => {
           try {
-            const dataPromise = origQueryZswap(addr, config);
-            const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2500));
-            const data: any = await Promise.race([dataPromise, timeoutPromise]);
-            if (Array.isArray(data)) {
+            let data: any;
+            if (config) {
+              try {
+                const p = origQueryZswap(addr, config);
+                data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+              } catch {}
+            }
+            if (!data) {
+              const p = origQueryZswap(addr, null);
+              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+            }
+            if (!data) {
+              const p = origQueryZswap(addr);
+              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+            }
+            if (Array.isArray(data) && data.length >= 2) {
               if (data[1]) data[1] = wrapState(data[1]);
               return data;
             }
           } catch (e) {
             console.warn("queryZSwapAndContractState error:", e);
           }
-          return null;
+          const cState = await base.queryContractState(addr);
+          return [
+            { postBlockUpdate: () => ({}) },
+            wrapState(cState || { version: "v9" }),
+            undefined
+          ];
         };
       }
 
@@ -192,9 +221,21 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
       if (origQueryRaw) {
         base.queryRawContractState = async (addr: string, config?: any) => {
           try {
-            const dataPromise = origQueryRaw(addr, config);
-            const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2500));
-            const data = await Promise.race([dataPromise, timeoutPromise]);
+            let data: any;
+            if (config) {
+              try {
+                const p = origQueryRaw(addr, config);
+                data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+              } catch {}
+            }
+            if (!data) {
+              const p = origQueryRaw(addr, null);
+              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+            }
+            if (!data) {
+              const p = origQueryRaw(addr);
+              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+            }
             if (data) return wrapState(data);
           } catch {}
           return wrapState({ version: "v9" });
