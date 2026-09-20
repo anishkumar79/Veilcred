@@ -43,20 +43,30 @@ export interface VerificationRecord {
 // ---------------------------------------------------------------------
 // Wallet connection
 // ---------------------------------------------------------------------
-export async function connectWallet(): Promise<WalletState> {
+let cachedWalletApi: any = null;
+
+export function getActiveWalletProvider() {
   const midnightObj = (window as any).midnight;
-  if (!midnightObj) {
-    throw new Error("No Midnight wallet found. Please install a Midnight wallet extension (like Lace or 1am).");
+  if (!midnightObj) return null;
+  return (
+    midnightObj["1am"] ||
+    midnightObj.oneam ||
+    midnightObj["1AM"] ||
+    midnightObj.mnLace ||
+    midnightObj.lace ||
+    Object.values(midnightObj)[0]
+  );
+}
+
+export async function connectWallet(): Promise<WalletState> {
+  const walletProvider = getActiveWalletProvider();
+  if (!walletProvider) {
+    throw new Error("No Midnight wallet found. Please install or unlock 1AM Wallet.");
   }
   
-  // Get the first available wallet injected, handling Lace, 1am, Nightly, etc.
-  const walletProvider = midnightObj.mnLace || midnightObj.lace || Object.values(midnightObj)[0];
-  if (!walletProvider) {
-    throw new Error("Midnight wallet provider not found in window.midnight.");
-  }
-
   // Connect to trigger the popup
   const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
+  cachedWalletApi = api;
   
   let address = "connected-wallet-hidden";
   
@@ -89,8 +99,8 @@ export async function connectWallet(): Promise<WalletState> {
 }
 
 export async function disconnectWallet(): Promise<void> {
-  // Real disconnect is handled by clearing local storage in the hook.
-  // The wallet extension itself doesn't have a programmatic disconnect API.
+  cachedWalletApi = null;
+  localStorage.removeItem("veilcred_wallet");
 }
 
 export const VERIFIED_PREPROD_CONTRACT_ADDRESS = "5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127";
@@ -185,12 +195,13 @@ export async function submitVerification(
     throw new Error("No issuer key supplied — is this credential signed?");
   }
 
-  const midnightObj = (window as any).midnight;
-  if (!midnightObj) throw new Error("Midnight wallet extension not found");
-  const walletProvider = midnightObj.mnLace || midnightObj.lace || Object.values(midnightObj)[0];
-  if (!walletProvider) throw new Error("No compatible wallet provider found");
-
-  const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
+  let api = cachedWalletApi;
+  if (!api) {
+    const walletProvider = getActiveWalletProvider();
+    if (!walletProvider) throw new Error("1AM wallet extension not found. Please install and unlock 1AM wallet.");
+    api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
+    cachedWalletApi = api;
+  }
   
   try {
     const { createMidnightProviders } = await import("./midnightProviders.js");
@@ -242,7 +253,7 @@ export async function submitVerification(
       initialPrivateState: await providers.privateStateProvider.get('veilcred-private-state')
     });
     
-    // Execute the contract circuit with a 25-second timeout so it never hangs for 5 minutes
+    // Execute the contract circuit — prompts 1AM wallet approval popup
     const data = new TextEncoder().encode(input.gateLabel);
     const digest = await crypto.subtle.digest("SHA-256", data);
     const gateIdBytes = new Uint8Array(digest);
@@ -254,40 +265,38 @@ export async function submitVerification(
     );
 
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("On-chain verification timed out (wallet or proof server response)")), 25000)
+      setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 60000)
     );
 
     const tx: any = await Promise.race([callPromise, timeoutPromise]);
     
-    // If the transaction is successful, we get a real on-chain transaction hash
-    const txHash = tx?.public?.txHash || ("0x" + randomHex(32));
+    // Extract real transaction hash from on-chain submission
+    const rawTxHash = tx?.public?.txHash || tx?.public?.txId || tx?.txHash || tx;
+    const cleanTxHash = String(rawTxHash || "").replace(/^0x/, "");
     const passes = input.attributeValue >= input.threshold;
     
     return {
-      nullifier: txHash,
+      nullifier: cleanTxHash || await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${secretStr}`),
       gateLabel: input.gateLabel,
       verified: passes,
       timestamp: now,
-      txHash,
-      explorerUrl: `https://preprod.midnightexplorer.com/transaction/${txHash}`
+      txHash: "0x" + cleanTxHash,
+      explorerUrl: `https://explorer.1am.xyz/tx/${cleanTxHash}?network=preprod`
     };
 
-  } catch (err) {
-    console.warn("Real on-chain transaction execution details (falling back to client-side ZK verification):", err);
-    
-    // Compute cryptographic nullifier from gate + issuer + secret
-    const nullifier = await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${input.holderSecret || randomHex(16)}`);
-    const passes = input.attributeValue >= input.threshold;
-    const simulatedTx = "0x" + randomHex(32);
-
-    return {
-      nullifier,
-      gateLabel: input.gateLabel,
-      verified: passes,
-      timestamp: now,
-      txHash: simulatedTx,
-      explorerUrl: `https://preprod.midnightexplorer.com/transaction/${simulatedTx}`
-    };
+  } catch (err: any) {
+    console.error("1AM transaction execution error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("background script") || msg.includes("extension loaded")) {
+      throw new Error("1AM Wallet background script is unresponsive. Please reload this page (Ctrl + F5) or click your 1AM extension icon to wake it up.");
+    }
+    if (msg.includes("User reject") || msg.includes("declined") || msg.includes("cancelled") || msg.includes("Canceled")) {
+      throw new Error("Transaction signature was cancelled in 1AM wallet.");
+    }
+    if (msg.includes("timed out")) {
+      throw new Error("Transaction timed out waiting for 1AM wallet approval.");
+    }
+    throw new Error(msg || "Could not execute transaction in 1AM wallet.");
   }
 }
 
