@@ -108,7 +108,15 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
       submitTx: async (tx: FinalizedTransaction): Promise<TransactionId> => {
         const txHex = toHex(tx.serialize());
         console.log("Submitting transaction to 1AM wallet for approval popup...");
-        const res: any = await api.submitTransaction(txHex);
+        let res: any;
+        const ap = api as any;
+        if (typeof ap.submitTransaction === "function") {
+          res = await ap.submitTransaction(txHex);
+        } else if (typeof ap.submitTx === "function") {
+          res = await ap.submitTx(txHex);
+        } else {
+          throw new Error("Connected wallet does not support submitTransaction");
+        }
         console.log("1AM submitTransaction response:", res);
         
         let txId: string = "";

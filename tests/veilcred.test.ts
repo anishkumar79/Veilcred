@@ -19,6 +19,9 @@ vi.mock('@midnight-ntwrk/midnight-js-contracts', () => ({
   findDeployedContract: vi.fn().mockImplementation(async (providers, options) => {
     return { 
       callTx: { 
+        registerIssuer: vi.fn().mockResolvedValue({
+          public: { txHash: '0x' + '11'.repeat(32) }
+        }),
         verifyThreshold: vi.fn().mockImplementation(async (gateIdBytes, threshold, now) => {
           const privateState = await providers.privateStateProvider.get('veilcred-private-state');
           

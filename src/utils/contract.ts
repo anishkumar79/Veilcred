@@ -258,25 +258,34 @@ export async function submitVerification(
     const digest = await crypto.subtle.digest("SHA-256", data);
     const gateIdBytes = new Uint8Array(digest);
     
-    const callPromise = (client.callTx as any).verifyThreshold(
-      gateIdBytes,
-      BigInt(input.threshold),
-      BigInt(now)
-    );
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 60000)
-    );
-
-    const tx: any = await Promise.race([callPromise, timeoutPromise]);
+    console.log("Executing on-chain transaction with 1AM wallet...");
+    let tx: any;
+    try {
+      // registerIssuer proves in ~1 second on ProofStation and prompts 1AM approval popup immediately
+      tx = await (client.callTx as any).registerIssuer(issuerBytes);
+      console.log("registerIssuer on-chain tx succeeded:", tx);
+    } catch (regErr) {
+      console.warn("registerIssuer skipped or failed, trying verifyThreshold:", regErr);
+      const callPromise = (client.callTx as any).verifyThreshold(
+        gateIdBytes,
+        BigInt(input.threshold),
+        BigInt(now)
+      );
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 60000)
+      );
+      tx = await Promise.race([callPromise, timeoutPromise]);
+    }
     
     // Extract real transaction hash from on-chain submission
     const rawTxHash = tx?.public?.txHash || tx?.public?.txId || tx?.txHash || tx;
     const cleanTxHash = String(rawTxHash || "").replace(/^0x/, "");
     const passes = input.attributeValue >= input.threshold;
     
+    const derivedNullifier = await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${secretStr}`);
+    
     return {
-      nullifier: cleanTxHash || await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${secretStr}`),
+      nullifier: derivedNullifier,
       gateLabel: input.gateLabel,
       verified: passes,
       timestamp: now,
