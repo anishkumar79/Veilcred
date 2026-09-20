@@ -19,9 +19,9 @@ import {
   DustSecretKey,
   type EncPublicKey,
   type FinalizedTransaction,
-  LedgerParameters,
   ZswapSecretKeys,
 } from '@midnight-ntwrk/midnight-js-protocol/ledger';
+import { LedgerParameters } from '@midnightntwrk/ledger-v9';
 import { type MidnightProvider, type UnboundTransaction, type WalletProvider } from '@midnight-ntwrk/midnight-js-types';
 import { ttlOneHour } from '@midnight-ntwrk/midnight-js-utils';
 import { type WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
