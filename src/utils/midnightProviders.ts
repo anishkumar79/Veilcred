@@ -74,14 +74,41 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
     publicDataProvider: (() => {
       const base: any = indexerPublicDataProvider(indexerUri, indexerWsUri);
       
+      const vkCache = new Map<string, Uint8Array>();
+      ["registerIssuer", "verifyThreshold", "isVerified"].forEach(async (id) => {
+        try {
+          const res = await fetch(`/keys/${id}.verifier`);
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            vkCache.set(id, new Uint8Array(buf));
+          }
+        } catch {}
+      });
+
       const wrapState = (state: any) => {
         if (!state || typeof state !== "object") return state;
-        if (!state.version) {
-          try {
-            state.version = "v9";
-          } catch {}
-        }
-        return state;
+        const origOp = typeof state.operation === "function" ? state.operation.bind(state) : null;
+
+        return new Proxy(state, {
+          get(target, prop, receiver) {
+            if (prop === "version") return "v9";
+            if (prop === "operation") {
+              return (circuitId: string) => {
+                const existing = origOp ? origOp(circuitId) : null;
+                const cachedVk = vkCache.get(circuitId);
+                if (cachedVk) {
+                  return {
+                    ...(existing || {}),
+                    verifierKey: cachedVk,
+                  };
+                }
+                return existing;
+              };
+            }
+            const val = Reflect.get(target, prop, receiver);
+            return typeof val === "function" ? val.bind(target) : val;
+          },
+        });
       };
 
       const origWatchDeploy = base.watchForDeployTxData?.bind(base);
