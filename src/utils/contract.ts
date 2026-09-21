@@ -21,7 +21,7 @@
 import { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } from "./midnightProviders.js";
 import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import { Contract } from "../../managed/veilcred/contract/index.js";
+import { Contract, contractReferenceLocations, pureCircuits } from "../../managed/veilcred/contract/index.js";
 
 export interface WalletState {
   address: string;
@@ -109,8 +109,14 @@ import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
 export async function deployVeilcredContractReal(providers: any): Promise<string> {
   console.log("Deploying contract from browser using 1AM Wallet...");
   try {
+    const compiledContract = {
+      Contract,
+      contractReferenceLocations,
+      pureCircuits
+    };
+    
     const deployed = await deployContract(providers, {
-      compiledContract: Contract as any,
+      compiledContract: compiledContract as any,
       args: []
     });
     
