@@ -122,6 +122,8 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
         const vk = vkCache.get(id);
         if (op && vk && !op.verifierKey) {
           op.verifierKey = vk;
+          // IMPORTANT: op is a copied wasm wrapper. We must set it back into the state!
+          (state as any).setOperation?.(id, op);
         }
       } catch {}
     }
