@@ -104,59 +104,50 @@ export async function getDeployedContractInfo(): Promise<{ contractAddress: stri
   };
 }
 
+import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
+import { type VeilcredProviders } from "./midnightProviders.js";
+
+export async function deployVeilcredContractReal(providers: any): Promise<string> {
+  console.log("Deploying contract from browser using 1AM Wallet...");
+  try {
+    const contractWithWitnesses = CompiledContract.withWitnesses(undefined)(Contract as any);
+    const deployed = await deployContract(providers, {
+      compiledContract: contractWithWitnesses as any,
+      args: []
+    });
+    
+    const address = deployed.deployTxData.public.contractAddress;
+    console.log("Deployed on-chain at:", address);
+    alert(`Deployed successfully! New contract address is: ${address}\n\nPlease copy this and update deployed_contract.json`);
+    return address;
+  } catch (e: any) {
+    console.error("Browser deployment failed:", e);
+    alert(`Deployment failed: ${e.message}`);
+    throw e;
+  }
+}
+
 // ---------------------------------------------------------------------
-// Contract Deployment (via Lace or Preprod CI)
+// Contract Deployment (via 1AM Wallet browser extension)
 // ---------------------------------------------------------------------
 export async function deployVeilcredContract(): Promise<string> {
-  // Return the verified on-chain deployed Midnight Preprod contract
-  const deployed = await getDeployedContractInfo();
-  if (deployed?.contractAddress && !deployed.contractAddress.startsWith("pending_")) {
-    await delay(1200);
-    return deployed.contractAddress;
-  }
-
   let address = "";
   try {
-    // Try to connect to Lace
     const midnightObj = (window as any).midnight || {};
-    // The newer Midnight Lace wallets inject using a UUID key instead of .mnLace
     const mnLace = midnightObj.mnLace || midnightObj.lace || Object.values(midnightObj)[0];
     
     if (mnLace) {
-      // Try both connection methods depending on the Lace version
       const api = await (mnLace.connect ? mnLace.connect("preprod") : (mnLace as any).enable());
-      
-      // api.state() returns an RxJS Observable in the new Midnight API
-      const state$ = await api.state();
-      
-      // We must subscribe to the observable to get the first state emission
-      address = await new Promise<string>((resolve) => {
-        const sub = state$.subscribe((state: any) => {
-          if (state && state.address) {
-            resolve(state.address);
-            sub.unsubscribe();
-          }
-        });
-        // Timeout just in case it doesn't emit
-        setTimeout(() => resolve("addr_preprod1" + randomHex(20)), 2000);
-      });
+      const providers = await createMidnightProviders(api);
+      return await deployVeilcredContractReal(providers as any);
+    } else {
+      throw new Error("No Midnight wallet found in browser. Please install 1AM Wallet.");
     }
-  } catch (e) {
-    console.warn("Lace connection error", e);
+  } catch (e: any) {
+    console.error("Browser deployment failed", e);
+    alert("Deployment failed: " + e.message);
+    throw e;
   }
-
-  if (!address) {
-    // Fallback if extension injection fails so you can still record the demo!
-    address = "addr_preprod1" + randomHex(20);
-  }
-
-  // Simulate deployment processing time (prover -> node -> ledger)
-  await delay(3000);
-
-  // Return a deterministic mock contract address based on their wallet 
-  // so they have a stable, verifiable-looking address for the MVP submission.
-  const addressHash = await sha256Hex(address + "veilcred-deploy");
-  return "contract_preprod1" + addressHash.substring(0, 38);
 }
 
 // ---------------------------------------------------------------------
