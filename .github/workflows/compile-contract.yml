@@ -1,0 +1,23 @@
+name: Compile Compact Contract
+on:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Contract with compactc 0.16.0
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/app midnightnetwork/compactc:0.16.0 compile /app/contracts/veilcred.compact /app/managed/veilcred
+          
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add managed/veilcred
+          git commit -m "chore: recompile contract with compactc 0.16.0" || echo "No changes to commit"
+          git push
