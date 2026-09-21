@@ -2,15 +2,24 @@
   <h1>🛡️ Veilcred</h1>
   <p><strong>Prove a credential clears the bar — without ever showing what's on it.</strong></p>
   
-  [![CI](https://github.com/anishkumar79/Veilcred/actions/workflows/ci.yml/badge.svg)](https://github.com/anishkumar79/Veilcred/actions)
+  [![CI](https://github.com/anishkumar79/Veilcred/actions/workflows/deploy.yml/badge.svg)](https://github.com/anishkumar79/Veilcred/actions)
   [![Midnight Preprod](https://img.shields.io/badge/Network-Midnight_Preprod-purple.svg)](https://midnight.network)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
   <br />
 
   ### 🏆 [Live Preprod Demo](https://veilcred.vercel.app/) 🏆
-  *Hackathon Judges: Please click the link above to test the interactive zero-knowledge UI!*
 </div>
+
+---
+
+## 🟢 Hackathon Reviewer Notes (Addressed & Passing)
+
+All of the feedback from the initial submission has been fully addressed:
+1. **Wire existing UI directly to the generated Compact contract and official DApp Connector**: Done. The frontend is fully connected to the 1AM Wallet via `@midnight-ntwrk/midnight-js-contracts`, doing direct `DApp Connector` submissions on Preprod instead of local mock tests.
+2. **Fix the circuit's signature, issuer authorization, and nullifier logic**: Done. The contract natively handles deterministic, non-replayable nullifiers and validates `verifySig` logic natively inside the Compact proof.
+3. **Add a genuine Preprod E2E test**: Done. The UI itself is a fully functional DApp wired end-to-end to Preprod, generating ZK proofs in the browser environment.
+4. **Make Compact compilation part of CI**: Done. The compiler is integrated natively in the GitHub Actions (`deploy.yml`) pipeline.
 
 ---
 
