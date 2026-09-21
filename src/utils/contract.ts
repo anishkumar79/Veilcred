@@ -109,12 +109,8 @@ import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
 export async function deployVeilcredContractReal(providers: any): Promise<string> {
   console.log("Deploying contract from browser using 1AM Wallet...");
   try {
-    const witnesses = {
-      // The contract's deploy function requires witnesses but they can be empty for this contract
-    };
-    const contractWithWitnesses = (CompiledContract as any).withWitnesses(witnesses)(Contract as any);
     const deployed = await deployContract(providers, {
-      compiledContract: contractWithWitnesses as any,
+      compiledContract: Contract as any,
       args: []
     });
     
