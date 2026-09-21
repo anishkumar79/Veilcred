@@ -16,10 +16,10 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo "$HOME/.compact/bin" >> "$GITHUB_PATH"
           
-      - name: Compile Contract with compactc 0.16.0
+      - name: Compile Contract with compact compiler 0.31.1
         run: |
           export PATH="$HOME/.local/bin:$HOME/.compact/bin:$PATH"
-          compact update 0.16.0
+          compact update 0.31.1 || compact update 0.31.0 || compact update
           compact compile contracts/veilcred.compact managed/veilcred
           
       - name: Commit and Push
