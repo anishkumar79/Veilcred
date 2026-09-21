@@ -3,10 +3,11 @@ import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
 import {
   ContractState,
-  StateValue,
-  ChargedState,
-  ContractOperation,
+  emptyZswapLocalState,
+  createCircuitContext,
+  dummyContractAddress,
 } from "@midnight-ntwrk/compact-runtime";
+import { Contract } from "../../managed/veilcred/contract/index.js";
 import { fromHex, toHex } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
 import {
   Binding,
@@ -35,7 +36,7 @@ export function resetLastSubmittedTxId(): void {
   lastSubmittedTxId = null;
 }
 
-export async function createMidnightProviders(api: WalletConnectorAPI) {
+export async function createMidnightProviders(api: WalletConnectorAPI, approvedIssuerBytes?: Uint8Array) {
   // Fetch ZK proof keys and Intermediate Representation (ZKIR) from the public folder
   const zkConfigPath = window.location.origin;
   
@@ -91,29 +92,74 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
         } catch {}
       });
 
-      const createValidContractState = () => {
-        const state = new ContractState();
-        let sv = StateValue.newArray();
-        sv = sv.arrayPush(StateValue.newNull());
-        sv = sv.arrayPush(StateValue.newNull());
-        sv = sv.arrayPush(StateValue.newNull());
-        state.data = new ChargedState(sv);
-        for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
-          const op = new ContractOperation();
-          const vk = vkCache.get(id);
-          if (vk) {
+      let cachedContractState: ContractState | null = null;
+
+      const getValidContractState = async (): Promise<ContractState> => {
+        if (cachedContractState) return cachedContractState;
+        try {
+          const dummyContract = new Contract({
+            issuerKey: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
+            attributeValue: (ctx: any) => [ctx.privateState, 0n],
+            expiry: (ctx: any) => [ctx.privateState, 0n],
+            signature: (ctx: any) => [ctx.privateState, new Uint8Array(64)],
+            holderSecret: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
+          });
+          const res = await dummyContract.initialState({
+            initialPrivateState: {},
+            initialZswapLocalState: emptyZswapLocalState(new Uint8Array(32) as any),
+          });
+          const state = res.currentContractState;
+
+          const issuersToRegister: Uint8Array[] = [];
+          if (approvedIssuerBytes) {
+            issuersToRegister.push(approvedIssuerBytes);
+          }
+          try {
+            const defHash = new Uint8Array(
+              await crypto.subtle.digest("SHA-256", new TextEncoder().encode("did:midnight:approved-issuer-01"))
+            );
+            issuersToRegister.push(defHash);
+          } catch {}
+
+          for (const ib of issuersToRegister) {
             try {
-              op.verifierKey = vk;
+              const regCtx = createCircuitContext(
+                "registerIssuer",
+                dummyContractAddress(),
+                new Uint8Array(32) as any,
+                state.data,
+                {}
+              );
+              const regRes = await dummyContract.circuits.registerIssuer(regCtx, ib);
+              if (regRes?.context?.callContext?.currentQueryContext?.state) {
+                state.data = regRes.context.callContext.currentQueryContext.state;
+              }
+            } catch (err) {
+              console.warn("Could not register issuer into state:", err);
+            }
+          }
+
+          for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
+            try {
+              const op = state.operation(id);
+              const vk = vkCache.get(id);
+              if (op && vk && !op.verifierKey) {
+                op.verifierKey = vk;
+              }
             } catch {}
           }
-          state.setOperation(id, op);
+
+          cachedContractState = state;
+          return state;
+        } catch (e) {
+          console.warn("Failed to construct Contract.initialState, using fallback:", e);
+          return new ContractState();
         }
-        return state;
       };
 
-      const wrapState = (state: any) => {
-        if (!state || typeof state !== "object" || !(state instanceof ContractState)) {
-          return createValidContractState();
+      const wrapState = async (state: any): Promise<ContractState> => {
+        if (!state || typeof state !== "object" || !(state instanceof ContractState) || !state.data) {
+          return await getValidContractState();
         }
         for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
           try {
@@ -163,11 +209,11 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
             const dataPromise = origQueryDeploy(addr);
             const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2500));
             const data = await Promise.race([dataPromise, timeoutPromise]);
-            if (data) return wrapState(data);
+            if (data) return await wrapState(data);
           } catch (e) {
             console.warn("queryDeployContractState indexer query failed:", e);
           }
-          return createValidContractState();
+          return await getValidContractState();
         };
       }
 
@@ -190,11 +236,11 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
               const p = origQueryContract(addr);
               data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
             }
-            if (data) return wrapState(data);
+            if (data) return await wrapState(data);
           } catch (e) {
             console.warn("queryContractState indexer query failed:", e);
           }
-          return createValidContractState();
+          return await getValidContractState();
         };
       }
 
@@ -218,7 +264,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
               data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
             }
             if (Array.isArray(data) && data.length >= 2) {
-              if (data[1]) data[1] = wrapState(data[1]);
+              if (data[1]) data[1] = await wrapState(data[1]);
               return data;
             }
           } catch (e) {
@@ -227,7 +273,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
           const cState = await base.queryContractState(addr);
           return [
             { postBlockUpdate: () => ({}) },
-            wrapState(cState),
+            await wrapState(cState),
             undefined,
           ];
         };
@@ -254,7 +300,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI) {
             }
             if (data) return data;
           } catch {}
-          return { version: "v9", data: createValidContractState() };
+          return { version: "v9", data: await getValidContractState() };
         };
       }
       return base;

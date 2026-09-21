@@ -206,12 +206,13 @@ export async function submitVerification(
   try {
     const { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } = await import("./midnightProviders.js");
     resetLastSubmittedTxId();
-    const providers = await createMidnightProviders(api);
     
     // Convert witnesses into proper 32-byte arrays for Compact runtime
     const issuerBytes = await sha256Bytes(input.issuerKey);
     const secretStr = input.holderSecret || randomHex(16);
     const secretBytes = await sha256Bytes(secretStr);
+
+    const providers = await createMidnightProviders(api, issuerBytes);
 
     // Inject the private state for this specific proof verification
     providers.privateStateProvider.get = async () => ({
