@@ -112,7 +112,7 @@ export async function deployVeilcredContractReal(providers: any): Promise<string
     const witnesses = {
       // The contract's deploy function requires witnesses but they can be empty for this contract
     };
-    const contractWithWitnesses = CompiledContract.withWitnesses(witnesses as any)(Contract as any);
+    const contractWithWitnesses = (CompiledContract as any).withWitnesses(witnesses)(Contract as any);
     const deployed = await deployContract(providers, {
       compiledContract: contractWithWitnesses as any,
       args: []
@@ -303,6 +303,12 @@ export async function submitVerification(
 // ---------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------
+function randomHex(bytes: number): string {
+  const arr = new Uint8Array(bytes);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function sha256Hex(msg: string): Promise<string> {
   const data = new TextEncoder().encode(msg);
   const digest = await crypto.subtle.digest("SHA-256", data);
