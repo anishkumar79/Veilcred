@@ -280,7 +280,6 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
     proofProvider: httpClientProofProvider(proverUri, keyMaterialProvider),
     publicDataProvider: base,
     walletProvider: createWalletProvider({
-      supportedEras: ["v9"],
       getCoinPublicKey: () => shieldedCoinPk,
       getEncryptionPublicKey: () => shieldedEncPk,
       balanceTx: async (tx: UnboundTransaction): Promise<FinalizedTransaction> => {
