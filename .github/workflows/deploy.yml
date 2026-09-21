@@ -1,6 +1,11 @@
 name: Deploy Veilcred to Preprod
 on:
   workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force re-deployment even if contract already exists'
+        required: false
+        default: 'true'
   push:
     branches:
       - main
@@ -11,6 +16,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,20 +30,17 @@ jobs:
           npm install
           npm install --no-save tsx
 
-      - name: Copy pre-compiled contract artifacts into deployment workspace
+      - name: Copy pre-compiled v9 (0.16.0) contract artifacts into deployment workspace
         run: |
-          # The contract is already compiled with compactc 0.19.0 and committed to the repo.
-          # We just copy the managed artifacts into the location the deployment CLI expects.
+          # The contract is compiled with compactc 0.31.1 (compact-runtime 0.16.0)
           mkdir -p preprod-deployment/contracts/src/managed/bboard
           cp -r managed/veilcred/* preprod-deployment/contracts/src/managed/bboard/
           mkdir -p preprod-deployment/contracts/dist/managed/bboard
           cp -r managed/veilcred/* preprod-deployment/contracts/dist/managed/bboard/
           echo "Contract artifacts copied successfully:"
           ls -la preprod-deployment/contracts/src/managed/bboard
-          ls -la preprod-deployment/contracts/src/managed/bboard/keys
-          ls -la preprod-deployment/contracts/src/managed/bboard/compiler
 
-      - name: Install contracts dependencies (with compact-runtime 0.19.0)
+      - name: Install contracts dependencies
         run: |
           cd preprod-deployment/contracts
           npm install
@@ -76,6 +80,7 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192 --expose-gc"
           WALLET_SEED: ${{ secrets.WALLET_SEED }}
+          FORCE_DEPLOY: ${{ github.event.inputs.force_deploy || 'true' }}
 
       - name: Save Wallet Database Cache
         if: always()
@@ -88,6 +93,17 @@ jobs:
             preprod-deployment/cli/level
             preprod-deployment/cli/.level
           key: ${{ runner.os }}-midnight-wallet-${{ github.run_id }}
+
+      - name: Commit new deployed_contract.json to repo
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/deployed_contract.json deployed_contract.json || true
+          git commit -m "chore: update deployed_contract.json with new v9 contract address" || echo "No changes"
+          git push || echo "Push skipped"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Display Deployment Results
         if: always()
