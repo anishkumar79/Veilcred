@@ -105,21 +105,23 @@ export async function getDeployedContractInfo(): Promise<{ contractAddress: stri
 }
 
 import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
-import { type VeilcredProviders } from "./midnightProviders.js";
 
 export async function deployVeilcredContractReal(providers: any): Promise<string> {
   console.log("Deploying contract from browser using 1AM Wallet...");
   try {
-    const contractWithWitnesses = CompiledContract.withWitnesses(undefined)(Contract as any);
+    const witnesses = {
+      // The contract's deploy function requires witnesses but they can be empty for this contract
+    };
+    const contractWithWitnesses = CompiledContract.withWitnesses(witnesses as any)(Contract as any);
     const deployed = await deployContract(providers, {
       compiledContract: contractWithWitnesses as any,
       args: []
     });
     
-    const address = deployed.deployTxData.public.contractAddress;
-    console.log("Deployed on-chain at:", address);
-    alert(`Deployed successfully! New contract address is: ${address}\n\nPlease copy this and update deployed_contract.json`);
-    return address;
+    const deployedAddress = deployed.deployTxData.public.contractAddress;
+    console.log("Deployed on-chain at:", deployedAddress);
+    alert(`Deployed successfully! New contract address is: ${deployedAddress}\n\nPlease copy this and update deployed_contract.json`);
+    return deployedAddress;
   } catch (e: any) {
     console.error("Browser deployment failed:", e);
     alert(`Deployment failed: ${e.message}`);
@@ -131,7 +133,6 @@ export async function deployVeilcredContractReal(providers: any): Promise<string
 // Contract Deployment (via 1AM Wallet browser extension)
 // ---------------------------------------------------------------------
 export async function deployVeilcredContract(): Promise<string> {
-  let address = "";
   try {
     const midnightObj = (window as any).midnight || {};
     const mnLace = midnightObj.mnLace || midnightObj.lace || Object.values(midnightObj)[0];
@@ -302,18 +303,8 @@ export async function submitVerification(
 // ---------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function randomHex(bytes: number): string {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
+async function sha256Hex(msg: string): Promise<string> {
+  const data = new TextEncoder().encode(msg);
   const digest = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(digest), (b) =>
     b.toString(16).padStart(2, "0")
