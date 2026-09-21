@@ -17,6 +17,13 @@
  *      against the generated `managed/veilcred` contract client.
  */
 
+// Static imports — required for vi.mock() to intercept them in tests
+// Using the 'src' alias so this resolves to the same module ID as vi.mock('src/utils/midnightProviders')
+import { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } from "src/utils/midnightProviders";
+import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
+import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
+import { Contract } from "../../managed/veilcred/contract/index.js";
+
 export interface WalletState {
   address: string;
   network: "preview" | "preprod" | "mainnet";
@@ -204,7 +211,6 @@ export async function submitVerification(
   }
   
   try {
-    const { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } = await import("./midnightProviders.js");
     resetLastSubmittedTxId();
     
     // Convert witnesses into proper 32-byte arrays for Compact runtime
@@ -223,12 +229,8 @@ export async function submitVerification(
         holderSecret: secretBytes 
     });
 
-    const { findDeployedContract } = await import("@midnight-ntwrk/midnight-js-contracts");
-    const { CompiledContract } = await import("@midnight-ntwrk/midnight-js-protocol/compact-js");
-    const { Contract } = await import("../../managed/veilcred/contract/index.js");
-
     // Initialize the generated contract wrapper with the required witnesses
-    class VeilcredContractWrapper extends Contract {
+    class VeilcredContractWrapper extends (Contract as any) {
       constructor() {
         super({
           issuerKey: (ctx: any) => [ctx.privateState, ctx.privateState.issuerKey],
@@ -240,7 +242,7 @@ export async function submitVerification(
       }
     }
 
-    const compiledContract = CompiledContract.make(
+    const compiledContract = (CompiledContract as any).make(
       "veilcred",
       VeilcredContractWrapper as any
     ) as any;

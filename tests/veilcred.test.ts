@@ -1,49 +1,26 @@
 /**
  * veilcred.test.ts
  * ----------------
- * These tests exercise the same predicate/expiry/nullifier logic that
- * `contracts/veilcred.compact` implements in-circuit. They run today
- * against the local mirror in `src/utils/contract.ts` (see the
- * TODO(midnight-sdk) markers there), and should be pointed at the
- * compiled contract's test harness once `compact compile` has produced
- * `managed/veilcred`:
- *
- *   import { veilcred } from "../managed/veilcred/contract/index.cjs";
- *
+ * Tests for the credential verification logic in contract.ts.
  * Run with: npm test
  */
 import { describe, it, expect, beforeAll, vi } from "vitest";
 
-// Mock Midnight SDK dynamic imports for tests
-vi.mock('@midnight-ntwrk/midnight-js-contracts', () => ({ 
-  findDeployedContract: vi.fn().mockImplementation(async (providers, options) => {
-    return { 
-      callTx: { 
+// ── Mock all Midnight SDK modules before any imports ──────────────────────────
+
+vi.mock('@midnight-ntwrk/midnight-js-contracts', () => ({
+  findDeployedContract: vi.fn().mockImplementation(async (_providers: any, _options: any) => {
+    return {
+      callTx: {
         registerIssuer: vi.fn().mockResolvedValue({
           public: { txHash: '0x' + '11'.repeat(32) }
         }),
-        verifyThreshold: vi.fn().mockImplementation(async (gateIdBytes, threshold, now) => {
-          const privateState = await providers.privateStateProvider.get('veilcred-private-state');
-          
-          if (privateState.expiry <= now) {
-            throw new Error("credential has expired");
-          }
-          if (!privateState.issuerKey || privateState.issuerKey.length === 0) {
-            throw new Error("issuer is not on the approved list");
-          }
-          
-          const crypto = require('crypto');
-          const gateIdHex = Buffer.from(gateIdBytes).toString('hex');
-          const nullifierHash = crypto.createHash('sha256').update(`${gateIdHex}:${privateState.issuerKey}:${privateState.holderSecret}`).digest('hex');
-          return { 
-            public: { 
-              txHash: nullifierHash 
-            } 
-          };
-        }) 
-      } 
+        verifyThreshold: vi.fn().mockResolvedValue({
+          public: { txHash: '0x' + 'aa'.repeat(32) }
+        })
+      }
     };
-  }) 
+  })
 }));
 
 vi.mock('@midnight-ntwrk/midnight-js-protocol/compact-js', () => ({
@@ -53,55 +30,80 @@ vi.mock('@midnight-ntwrk/midnight-js-protocol/compact-js', () => ({
 }));
 
 vi.mock('../../managed/veilcred/contract/index.js', () => ({
-  Contract: class MockContract {}
+  Contract: class MockContract {
+    constructor(_witnesses: any) {}
+  }
 }));
 
-vi.mock('../src/utils/midnightProviders', () => ({ 
+// Mock midnightProviders — path must match what contract.ts imports via the 'src' alias
+vi.mock('src/utils/midnightProviders', () => ({
   createMidnightProviders: vi.fn().mockResolvedValue({
     privateStateProvider: {
-      get: vi.fn(),
+      get: vi.fn().mockResolvedValue({
+        issuerKey: new Uint8Array(32).fill(1),
+        attributeValue: 24n,
+        expiry: BigInt(Math.floor(Date.now() / 1000) + 86400 * 30),
+        signature: new Uint8Array(64),
+        holderSecret: new Uint8Array(32).fill(2),
+      }),
       set: vi.fn(),
-      remove: vi.fn()
+      remove: vi.fn(),
+      setContractAddress: vi.fn(),
+      getSigningKey: vi.fn().mockResolvedValue(null),
+      setSigningKey: vi.fn(),
+      removeSigningKey: vi.fn(),
+      clearSigningKeys: vi.fn(),
     }
   }),
-  getLastSubmittedTxId: vi.fn().mockReturnValue(null),
-  resetLastSubmittedTxId: vi.fn()
+  getLastSubmittedTxId: vi.fn().mockReturnValue('mockTxHash1122334455667788aabbccdd'),
+  resetLastSubmittedTxId: vi.fn(),
 }));
 
 import { submitVerification, type CredentialInput } from "../src/utils/contract";
 
+// Fake 1AM wallet API that is injected into window.midnight
+const fakeWalletApi = {
+  enable: vi.fn().mockResolvedValue({
+    state: vi.fn().mockResolvedValue({
+      subscribe: (observer: any) => {
+        observer.next({ address: "addr_preprod1test_mock_wallet" });
+        return { unsubscribe: vi.fn() };
+      }
+    }),
+  }),
+  getConfiguration: vi.fn().mockResolvedValue({
+    proverServerUri: 'https://api-preprod.1am.xyz',
+    indexerUri: 'https://indexer.preprod.midnight.network/api/v4/graphql',
+    indexerWsUri: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
+  }),
+  getShieldedAddresses: vi.fn().mockResolvedValue({
+    shieldedCoinPublicKey: '00'.repeat(32),
+    shieldedEncryptionPublicKey: '00'.repeat(32),
+  }),
+  balanceUnsealedTransaction: vi.fn(),
+  submitTransaction: vi.fn().mockResolvedValue('mockSubmitTxHash'),
+};
+
 beforeAll(() => {
-  // Mock window.midnight to simulate Lace/1am wallet extension for E2E tests
-  (global as any).window = {
-    location: { origin: 'http://localhost' },
-    midnight: {
-      mnLace: {
-        enable: vi.fn().mockResolvedValue({
-          state: vi.fn().mockResolvedValue({
-            subscribe: (observer: any) => {
-              observer.next({ address: "addr_preprod1test_mock_wallet" });
-              return { unsubscribe: vi.fn() };
-            }
-          }),
-          signData: vi.fn().mockResolvedValue("signature"),
-        })
-      }
-    }
+  // Inject a fake 1AM wallet into the jsdom window object
+  (window as any).midnight = {
+    mnLace: fakeWalletApi,
   };
-  
-  // Mock crypto for hashing
-  if (!(global as any).crypto) {
-    const crypto = require('crypto');
-    (global as any).crypto = {
-      subtle: {
-        digest: async (algo: string, data: Uint8Array) => {
-          return crypto.createHash('sha256').update(data).digest();
-        }
+
+  // Polyfill crypto.subtle if not available in the test environment
+  if (!(global as any).crypto?.subtle) {
+    const nodeCrypto = require('crypto');
+    Object.defineProperty(global, 'crypto', {
+      value: {
+        subtle: {
+          digest: async (_algo: string, data: Uint8Array) => {
+            return nodeCrypto.createHash('sha256').update(Buffer.from(data)).digest();
+          }
+        },
+        getRandomValues: (arr: Uint8Array) => nodeCrypto.randomFillSync(arr),
       },
-      getRandomValues: (arr: Uint8Array) => {
-        return crypto.randomFillSync(arr);
-      }
-    };
+      writable: true,
+    });
   }
 });
 
@@ -135,7 +137,7 @@ describe("veilcred credential verification", () => {
     await expect(
       submitVerification(wallet, {
         ...baseInput,
-        attributeValue: 99, // would easily pass the threshold
+        attributeValue: 99,
         expiryTimestamp: Math.floor(Date.now() / 1000) - 3600,
       })
     ).rejects.toThrow(/expired/i);

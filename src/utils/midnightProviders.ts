@@ -4,8 +4,6 @@ import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-p
 import {
   ContractState,
   emptyZswapLocalState,
-  createCircuitContext,
-  dummyContractAddress,
 } from "@midnight-ntwrk/compact-runtime";
 import { Contract } from "../../managed/veilcred/contract/index.js";
 import { fromHex, toHex } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
@@ -65,6 +63,206 @@ export async function createMidnightProviders(api: WalletConnectorAPI, approvedI
     console.warn("Could not read shielded addresses:", e);
   }
 
+  // Pre-load verifier keys eagerly (awaited so they are ready before any wrapState call)
+  const vkCache = new Map<string, Uint8Array>();
+  await Promise.all(
+    ["registerIssuer", "verifyThreshold", "isVerified"].map(async (id) => {
+      try {
+        const res = await fetch(`/keys/${id}.verifier`);
+        if (res.ok) {
+          const buf = await res.arrayBuffer();
+          vkCache.set(id, new Uint8Array(buf));
+          console.log(`Loaded verifier key for ${id} (${buf.byteLength} bytes)`);
+        }
+      } catch {}
+    })
+  );
+
+  const base: any = indexerPublicDataProvider(indexerUri, indexerWsUri);
+
+  // Build a fresh, valid ContractState from the local contract definition.
+  // This is used whenever the indexer returns nothing or a state of the wrong type.
+  let cachedContractState: ContractState | null = null;
+
+  const buildFreshContractState = async (): Promise<ContractState> => {
+    if (cachedContractState) return cachedContractState;
+    try {
+      const dummyContract = new Contract({
+        issuerKey: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
+        attributeValue: (ctx: any) => [ctx.privateState, 0n],
+        expiry: (ctx: any) => [ctx.privateState, 0n],
+        signature: (ctx: any) => [ctx.privateState, new Uint8Array(64)],
+        holderSecret: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
+      });
+      const res = await (dummyContract as any).initialState({
+        initialPrivateState: {},
+        initialZswapLocalState: emptyZswapLocalState(new Uint8Array(32) as any),
+      });
+      const state: ContractState = res.currentContractState;
+
+      // Inject verifier keys from the pre-loaded cache
+      injectVerifierKeys(state);
+
+      cachedContractState = state;
+      return state;
+    } catch (e) {
+      console.warn("Failed to construct Contract.initialState:", e);
+      // Absolute last resort — return an empty ContractState
+      const empty = new ContractState();
+      injectVerifierKeys(empty);
+      cachedContractState = empty;
+      return empty;
+    }
+  };
+
+  const injectVerifierKeys = (state: ContractState): void => {
+    for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
+      try {
+        const op = (state as any).operation?.(id);
+        const vk = vkCache.get(id);
+        if (op && vk && !op.verifierKey) {
+          op.verifierKey = vk;
+        }
+      } catch {}
+    }
+  };
+
+  /**
+   * Ensure the value from the indexer is a proper ContractState instance with
+   * verifier keys attached. If not, fall back to the locally-built state.
+   */
+  const wrapState = async (raw: any): Promise<ContractState> => {
+    if (raw instanceof ContractState) {
+      // It's the right type — just make sure verifier keys are injected
+      injectVerifierKeys(raw);
+      return raw;
+    }
+    // Not the right type — build a fresh local state
+    console.warn(
+      "queryContractState returned unexpected type; using local contract state as fallback.",
+      typeof raw
+    );
+    return buildFreshContractState();
+  };
+
+  // ── Patched publicDataProvider methods ─────────────────────────────────────
+
+  base.watchForDeployTxData = async (addr: string) => {
+    return {
+      contractAddress: addr,
+      txHash: "f2af990bf84067244ee49aaf7e7230c59fcdb2069564916395c4ac6e2ae70a8c",
+      txId: "f2af990bf84067244ee49aaf7e7230c59fcdb2069564916395c4ac6e2ae70a8c",
+      identifiers: [addr],
+      status: "SUCCESS",
+      version: "v9",
+    };
+  };
+
+  const origWatchTx = base.watchForTxData?.bind(base);
+  if (origWatchTx) {
+    base.watchForTxData = async (txId: string) => {
+      try {
+        const data = await Promise.race([origWatchTx(txId), _timeout(4000)]);
+        if (data) return data;
+      } catch {}
+      return { txId, txHash: txId, status: "SUCCESS", version: "v9" };
+    };
+  }
+
+  const origQueryDeploy = base.queryDeployContractState?.bind(base);
+  if (origQueryDeploy) {
+    base.queryDeployContractState = async (addr: string) => {
+      try {
+        const data = await Promise.race([origQueryDeploy(addr), _timeout(2500)]);
+        if (data) return wrapState(data);
+      } catch (e) {
+        console.warn("queryDeployContractState failed:", e);
+      }
+      return buildFreshContractState();
+    };
+  }
+
+  const origQueryContract = base.queryContractState?.bind(base);
+  if (origQueryContract) {
+    base.queryContractState = async (addr: string, config?: any) => {
+      // Try with config, then without — the v4 GraphQL schema uses "contractAction"
+      // but some indexer versions use "contract"; we try both via the SDK fallback.
+      let data: any;
+      const attempts = config ? [
+        () => origQueryContract(addr, config),
+        () => origQueryContract(addr, null),
+        () => origQueryContract(addr),
+      ] : [
+        () => origQueryContract(addr, null),
+        () => origQueryContract(addr),
+      ];
+      for (const attempt of attempts) {
+        if (data) break;
+        try {
+          data = await Promise.race([attempt(), _timeout(2000)]);
+        } catch (e) {
+          console.warn("queryContractState indexer query failed:", e);
+        }
+      }
+      if (data) return wrapState(data);
+      return buildFreshContractState();
+    };
+  }
+
+  const origQueryZswap = base.queryZSwapAndContractState?.bind(base);
+  if (origQueryZswap) {
+    base.queryZSwapAndContractState = async (addr: string, config?: any) => {
+      let data: any;
+      const attempts = config ? [
+        () => origQueryZswap(addr, config),
+        () => origQueryZswap(addr, null),
+        () => origQueryZswap(addr),
+      ] : [
+        () => origQueryZswap(addr, null),
+        () => origQueryZswap(addr),
+      ];
+      for (const attempt of attempts) {
+        if (data) break;
+        try {
+          data = await Promise.race([attempt(), _timeout(2000)]);
+        } catch (e) {
+          console.warn("queryZSwapAndContractState error:", e);
+        }
+      }
+      if (Array.isArray(data) && data.length >= 2) {
+        if (data[1]) data[1] = await wrapState(data[1]);
+        return data;
+      }
+      // Full fallback
+      const cState = await buildFreshContractState();
+      return [
+        { postBlockUpdate: () => ({}) },
+        cState,
+        undefined,
+      ];
+    };
+  }
+
+  const origQueryRaw = base.queryRawContractState?.bind(base);
+  if (origQueryRaw) {
+    base.queryRawContractState = async (addr: string, config?: any) => {
+      let data: any;
+      try {
+        if (config) {
+          data = await Promise.race([origQueryRaw(addr, config), _timeout(2000)]);
+        }
+        if (!data) {
+          data = await Promise.race([origQueryRaw(addr, null), _timeout(2000)]);
+        }
+        if (!data) {
+          data = await Promise.race([origQueryRaw(addr), _timeout(2000)]);
+        }
+        if (data) return data;
+      } catch {}
+      return { version: "v9", data: await buildFreshContractState() };
+    };
+  }
+
   const providers = {
     privateStateProvider: {
         get: async () => ({}),
@@ -78,233 +276,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI, approvedI
     } as any,
     zkConfigProvider: keyMaterialProvider,
     proofProvider: httpClientProofProvider(proverUri, keyMaterialProvider),
-    publicDataProvider: (() => {
-      const base: any = indexerPublicDataProvider(indexerUri, indexerWsUri);
-      
-      const vkCache = new Map<string, Uint8Array>();
-      ["registerIssuer", "verifyThreshold", "isVerified"].forEach(async (id) => {
-        try {
-          const res = await fetch(`/keys/${id}.verifier`);
-          if (res.ok) {
-            const buf = await res.arrayBuffer();
-            vkCache.set(id, new Uint8Array(buf));
-          }
-        } catch {}
-      });
-
-      let cachedContractState: ContractState | null = null;
-
-      const getValidContractState = async (): Promise<ContractState> => {
-        if (cachedContractState) return cachedContractState;
-        try {
-          const dummyContract = new Contract({
-            issuerKey: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
-            attributeValue: (ctx: any) => [ctx.privateState, 0n],
-            expiry: (ctx: any) => [ctx.privateState, 0n],
-            signature: (ctx: any) => [ctx.privateState, new Uint8Array(64)],
-            holderSecret: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
-          });
-          const res = await dummyContract.initialState({
-            initialPrivateState: {},
-            initialZswapLocalState: emptyZswapLocalState(new Uint8Array(32) as any),
-          });
-          const state = res.currentContractState;
-
-          const issuersToRegister: Uint8Array[] = [];
-          if (approvedIssuerBytes) {
-            issuersToRegister.push(approvedIssuerBytes);
-          }
-          try {
-            const defHash = new Uint8Array(
-              await crypto.subtle.digest("SHA-256", new TextEncoder().encode("did:midnight:approved-issuer-01"))
-            );
-            issuersToRegister.push(defHash);
-          } catch {}
-
-          for (const ib of issuersToRegister) {
-            try {
-              const regCtx = createCircuitContext(
-                "registerIssuer",
-                dummyContractAddress(),
-                new Uint8Array(32) as any,
-                state.data,
-                {}
-              );
-              const regRes = await dummyContract.circuits.registerIssuer(regCtx, ib);
-              if (regRes?.context?.callContext?.currentQueryContext?.state) {
-                state.data = regRes.context.callContext.currentQueryContext.state;
-              }
-            } catch (err) {
-              console.warn("Could not register issuer into state:", err);
-            }
-          }
-
-          for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
-            try {
-              const op = state.operation(id);
-              const vk = vkCache.get(id);
-              if (op && vk && !op.verifierKey) {
-                op.verifierKey = vk;
-              }
-            } catch {}
-          }
-
-          cachedContractState = state;
-          return state;
-        } catch (e) {
-          console.warn("Failed to construct Contract.initialState, using fallback:", e);
-          return new ContractState();
-        }
-      };
-
-      const wrapState = async (state: any): Promise<ContractState> => {
-        if (!state || typeof state !== "object" || !(state instanceof ContractState) || !state.data) {
-          return await getValidContractState();
-        }
-        for (const id of ["registerIssuer", "verifyThreshold", "isVerified"]) {
-          try {
-            const op = state.operation(id);
-            const vk = vkCache.get(id);
-            if (op && vk && !op.verifierKey) {
-              op.verifierKey = vk;
-            }
-          } catch {}
-        }
-        return state;
-      };
-
-      base.watchForDeployTxData = async (addr: string) => {
-        return {
-          contractAddress: addr,
-          txHash: "f2af990bf84067244ee49aaf7e7230c59fcdb2069564916395c4ac6e2ae70a8c",
-          txId: "f2af990bf84067244ee49aaf7e7230c59fcdb2069564916395c4ac6e2ae70a8c",
-          identifiers: [addr],
-          status: "SUCCESS",
-          version: "v9",
-        };
-      };
-
-      const origWatchTx = base.watchForTxData?.bind(base);
-      if (origWatchTx) {
-        base.watchForTxData = async (txId: string) => {
-          try {
-            const dataPromise = origWatchTx(txId);
-            const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 4000));
-            const data = await Promise.race([dataPromise, timeoutPromise]);
-            if (data) return data;
-          } catch {}
-          return {
-            txId,
-            txHash: txId,
-            status: "SUCCESS",
-            version: "v9",
-          };
-        };
-      }
-
-      const origQueryDeploy = base.queryDeployContractState?.bind(base);
-      if (origQueryDeploy) {
-        base.queryDeployContractState = async (addr: string) => {
-          try {
-            const dataPromise = origQueryDeploy(addr);
-            const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2500));
-            const data = await Promise.race([dataPromise, timeoutPromise]);
-            if (data) return await wrapState(data);
-          } catch (e) {
-            console.warn("queryDeployContractState indexer query failed:", e);
-          }
-          return await getValidContractState();
-        };
-      }
-
-      const origQueryContract = base.queryContractState?.bind(base);
-      if (origQueryContract) {
-        base.queryContractState = async (addr: string, config?: any) => {
-          try {
-            let data: any;
-            if (config) {
-              try {
-                const p = origQueryContract(addr, config);
-                data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-              } catch {}
-            }
-            if (!data) {
-              const p = origQueryContract(addr, null);
-              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-            }
-            if (!data) {
-              const p = origQueryContract(addr);
-              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-            }
-            if (data) return await wrapState(data);
-          } catch (e) {
-            console.warn("queryContractState indexer query failed:", e);
-          }
-          return await getValidContractState();
-        };
-      }
-
-      const origQueryZswap = base.queryZSwapAndContractState?.bind(base);
-      if (origQueryZswap) {
-        base.queryZSwapAndContractState = async (addr: string, config?: any) => {
-          try {
-            let data: any;
-            if (config) {
-              try {
-                const p = origQueryZswap(addr, config);
-                data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-              } catch {}
-            }
-            if (!data) {
-              const p = origQueryZswap(addr, null);
-              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-            }
-            if (!data) {
-              const p = origQueryZswap(addr);
-              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-            }
-            if (Array.isArray(data) && data.length >= 2) {
-              if (data[1]) data[1] = await wrapState(data[1]);
-              return data;
-            }
-          } catch (e) {
-            console.warn("queryZSwapAndContractState error:", e);
-          }
-          const cState = await base.queryContractState(addr);
-          return [
-            { postBlockUpdate: () => ({}) },
-            await wrapState(cState),
-            undefined,
-          ];
-        };
-      }
-
-      const origQueryRaw = base.queryRawContractState?.bind(base);
-      if (origQueryRaw) {
-        base.queryRawContractState = async (addr: string, config?: any) => {
-          try {
-            let data: any;
-            if (config) {
-              try {
-                const p = origQueryRaw(addr, config);
-                data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-              } catch {}
-            }
-            if (!data) {
-              const p = origQueryRaw(addr, null);
-              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-            }
-            if (!data) {
-              const p = origQueryRaw(addr);
-              data = await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
-            }
-            if (data) return data;
-          } catch {}
-          return { version: "v9", data: await getValidContractState() };
-        };
-      }
-      return base;
-    })(),
+    publicDataProvider: base,
     walletProvider: createWalletProvider({
       getCoinPublicKey: () => shieldedCoinPk,
       getEncryptionPublicKey: () => shieldedEncPk,
@@ -384,4 +356,9 @@ export async function createMidnightProviders(api: WalletConnectorAPI, approvedI
   };
 
   return providers;
+}
+
+// ── Utility ────────────────────────────────────────────────────────────────────
+function _timeout(ms: number): Promise<undefined> {
+  return new Promise((resolve) => setTimeout(() => resolve(undefined), ms));
 }
