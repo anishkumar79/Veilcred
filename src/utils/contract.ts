@@ -55,11 +55,11 @@ export function getActiveWalletProvider() {
   const midnightObj = (window as any).midnight;
   if (!midnightObj) return null;
   return (
+    midnightObj.mnLace ||
+    midnightObj.lace ||
     midnightObj["1am"] ||
     midnightObj.oneam ||
     midnightObj["1AM"] ||
-    midnightObj.mnLace ||
-    midnightObj.lace ||
     Object.values(midnightObj)[0]
   );
 }
