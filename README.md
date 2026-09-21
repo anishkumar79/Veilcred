@@ -71,7 +71,7 @@ Our vision is a digital ecosystem where privacy and accountability are not mutua
 |---------|------------------|-------------------|
 | **Midnight Preprod** | `0x5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127` | [View on Midnight Explorer](https://preprod.midnightexplorer.com/contracts/0x5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127) |
 
-![Deployed Contract on Explorer](docs/assets/deployed_id.png)
+![Deployed Contract on Explorer](docs/assets/blockexplorer.png)
 *(Screenshot of the blockexplorer showing the deployed contract details)*
 
 > 🚀 **Verified On-Chain Preprod Contract**: Deployed autonomously via GitHub Actions CI/CD (`.github/workflows/deploy.yml`) utilizing the fast Midnight Preprod deployment pipeline with WASM heap memory patch and 5,000-event batch DUST sync.
