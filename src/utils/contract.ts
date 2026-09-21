@@ -76,28 +76,15 @@ export async function connectWallet(): Promise<WalletState> {
   
   let address = "connected-wallet-hidden";
   
-  // Try to extract the address based on different wallet provider shapes
-  if (api) {
-    if (typeof api.address === "string") {
-      address = api.address;
-    } else if (typeof api.changeAddress === "string") {
-      address = api.changeAddress;
-    } else if (typeof api.state === "function") {
-      // Legacy Lace/Nightly observable approach
-      try {
-        const state$ = await api.state();
-        address = await new Promise<string>((resolve) => {
-          const sub = state$.subscribe((state: any) => {
-            if (state && state.address) {
-              resolve(state.address);
-              sub.unsubscribe();
-            }
-          });
-          setTimeout(() => resolve("connected-wallet-hidden"), 2000);
-        });
-      } catch (e) {
-        console.warn("Could not subscribe to wallet state", e);
+  // Try to get a shielded address to verify connection
+  if (api && typeof api.getShieldedAddresses === "function") {
+    try {
+      const addresses = await api.getShieldedAddresses();
+      if (addresses && addresses.shieldedCoinPublicKey) {
+        address = addresses.shieldedCoinPublicKey.substring(0, 16) + "...";
       }
+    } catch (e) {
+      console.warn("Could not get shielded addresses", e);
     }
   }
 
