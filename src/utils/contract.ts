@@ -234,41 +234,45 @@ export async function submitVerification(
     const digest = await crypto.subtle.digest("SHA-256", data);
     const gateIdBytes = new Uint8Array(digest);
     
-    console.log("Executing on-chain transaction with 1AM wallet...");
+    console.log("Step 1: Registering issuer on-chain...");
     let tx: any;
+    
+    // Step 1: Register the issuer (if not already registered)
     try {
-      // registerIssuer proves in ~1 second on ProofStation and prompts 1AM approval popup immediately
-      const callPromise = (client.callTx as any).registerIssuer(issuerBytes);
-      const earlyReturnPromise = new Promise<{ early: true }>((resolve) => {
-        const check = setInterval(() => {
-          if (getLastSubmittedTxId()) {
-            clearInterval(check);
-            setTimeout(() => resolve({ early: true }), 1500);
-          }
-        }, 300);
-      });
-      tx = await Promise.race([callPromise, earlyReturnPromise]);
-      console.log("registerIssuer on-chain tx succeeded:", tx);
-    } catch (regErr) {
-      console.warn("registerIssuer skipped or failed, trying verifyThreshold:", regErr);
-      const callPromise = (client.callTx as any).verifyThreshold(
+      resetLastSubmittedTxId();
+      tx = await Promise.race([
+        (client.callTx as any).registerIssuer(issuerBytes),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("registerIssuer timeout")), 90000))
+      ]);
+      console.log("registerIssuer tx submitted:", tx);
+      // Wait for indexer to pick up the registerIssuer tx
+      await new Promise(r => setTimeout(r, 5000));
+    } catch (regErr: any) {
+      const regMsg = String(regErr?.message || regErr || "");
+      // If already registered or submission dup error, that's fine — proceed
+      if (regMsg.includes("already") || regMsg.includes("duplicate") || regMsg.includes("SubmissionError")) {
+        console.warn("registerIssuer failed (possibly already registered), proceeding to verifyThreshold:", regMsg);
+      } else {
+        console.error("registerIssuer failed with unexpected error:", regMsg);
+        throw new Error(`Failed to register issuer: ${regMsg}`);
+      }
+    }
+
+    // Step 2: Verify threshold (the main proof)
+    console.log("Step 2: Running verifyThreshold proof...");
+    resetLastSubmittedTxId();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 90000)
+    );
+    tx = await Promise.race([
+      (client.callTx as any).verifyThreshold(
         gateIdBytes,
         BigInt(input.threshold),
         BigInt(now)
-      );
-      const earlyReturnPromise = new Promise<{ early: true }>((resolve) => {
-        const check = setInterval(() => {
-          if (getLastSubmittedTxId()) {
-            clearInterval(check);
-            setTimeout(() => resolve({ early: true }), 1500);
-          }
-        }, 300);
-      });
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 60000)
-      );
-      tx = await Promise.race([callPromise, earlyReturnPromise, timeoutPromise]);
-    }
+      ),
+      timeoutPromise
+    ]);
+    console.log("verifyThreshold tx succeeded:", tx);
     
     // Extract real transaction hash from on-chain submission
     const submittedId = getLastSubmittedTxId();
