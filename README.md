@@ -31,9 +31,6 @@ All of the feedback from the initial submission has been fully addressed:
 ### 1. Connecting Wallet & Generating Local Proof
 ![Wallet Connection](docs/assets/product_ui.png)
 
-### 2. Contract Deployed
-![Deployed Contract](docs/assets/deployed_id.png)
-
 ### 3. Terminal Verification
 ![Terminal Output](docs/assets/terminal.png) — Show your Ubuntu terminal where it says `Compiling 3 circuits` in green.
 
