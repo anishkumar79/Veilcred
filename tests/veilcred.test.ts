@@ -35,8 +35,11 @@ vi.mock('../../managed/veilcred/contract/index.js', () => ({
   }
 }));
 
-// Mock midnightProviders — path must match what contract.ts imports via the 'src' alias
-vi.mock('src/utils/midnightProviders', () => ({
+// Mock midnightProviders using the exact same import path that contract.ts uses.
+// contract.ts has:  import { createMidnightProviders, ... } from "./midnightProviders.js"
+// Resolved from src/utils/contract.ts -> src/utils/midnightProviders(.js)
+// Vitest resolves this to the absolute path below. We mock using the relative path '../src/utils/midnightProviders'.
+vi.mock('../src/utils/midnightProviders', () => ({
   createMidnightProviders: vi.fn().mockResolvedValue({
     privateStateProvider: {
       get: vi.fn().mockResolvedValue({
@@ -85,9 +88,12 @@ const fakeWalletApi = {
 };
 
 beforeAll(() => {
-  // Inject a fake 1AM wallet into the jsdom window object
-  (window as any).midnight = {
-    mnLace: fakeWalletApi,
+  // Inject a fake 1AM wallet into the global window object (since we are not using jsdom)
+  (global as any).window = {
+    location: { origin: 'http://localhost' },
+    midnight: {
+      mnLace: fakeWalletApi,
+    }
   };
 
   // Polyfill crypto.subtle if not available in the test environment

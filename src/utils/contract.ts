@@ -18,8 +18,7 @@
  */
 
 // Static imports — required for vi.mock() to intercept them in tests
-// Using the 'src' alias so this resolves to the same module ID as vi.mock('src/utils/midnightProviders')
-import { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } from "src/utils/midnightProviders";
+import { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } from "./midnightProviders.js";
 import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 import { Contract } from "../../managed/veilcred/contract/index.js";

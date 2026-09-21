@@ -34,7 +34,7 @@ export function resetLastSubmittedTxId(): void {
   lastSubmittedTxId = null;
 }
 
-export async function createMidnightProviders(api: WalletConnectorAPI, approvedIssuerBytes?: Uint8Array) {
+export async function createMidnightProviders(api: WalletConnectorAPI, _approvedIssuerBytes?: Uint8Array) {
   // Fetch ZK proof keys and Intermediate Representation (ZKIR) from the public folder
   const zkConfigPath = window.location.origin;
   
