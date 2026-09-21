@@ -67,28 +67,14 @@ export function getActiveWalletProvider() {
 export async function connectWallet(): Promise<WalletState> {
   const walletProvider = getActiveWalletProvider();
   if (!walletProvider) {
-    throw new Error("No Midnight wallet found. Please install or unlock 1AM Wallet.");
+    throw new Error("No Midnight wallet found. Please install a compatible wallet.");
   }
   
   // Connect to trigger the popup
   const api = await (walletProvider.connect ? walletProvider.connect("preprod") : (walletProvider as any).enable());
   cachedWalletApi = api;
   
-  let address = "connected-wallet-hidden";
-  
-  // Try to get a shielded address to verify connection
-  if (api && typeof api.getShieldedAddresses === "function") {
-    try {
-      const addresses = await api.getShieldedAddresses();
-      if (addresses && addresses.shieldedCoinPublicKey) {
-        address = addresses.shieldedCoinPublicKey.substring(0, 16) + "...";
-      }
-    } catch (e) {
-      console.warn("Could not get shielded addresses", e);
-    }
-  }
-
-  return { address, network: "preprod" };
+  return { address: "connected-wallet-hidden", network: "preprod" };
 }
 
 export async function disconnectWallet(): Promise<void> {
