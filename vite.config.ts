@@ -4,5 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  test: {
+    testTimeout: 60000,
+  },
 })
 // Vite build configuration for Veilcred

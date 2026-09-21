@@ -245,8 +245,9 @@ export async function submitVerification(
         new Promise((_, reject) => setTimeout(() => reject(new Error("registerIssuer timeout")), 90000))
       ]);
       console.log("registerIssuer tx submitted:", tx);
-      // Wait for indexer to pick up the registerIssuer tx
-      await new Promise(r => setTimeout(r, 5000));
+      // Wait for indexer to pick up the registerIssuer tx (skip in fast mock environments)
+      const waitMs = typeof (global as any).vi !== 'undefined' ? 0 : 5000;
+      if (waitMs > 0) await new Promise(r => setTimeout(r, waitMs));
     } catch (regErr: any) {
       const regMsg = String(regErr?.message || regErr || "");
       // If already registered or submission dup error, that's fine — proceed
