@@ -21,7 +21,7 @@
 import { createMidnightProviders, getLastSubmittedTxId, resetLastSubmittedTxId } from "./midnightProviders.js";
 import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import { Contract, contractReferenceLocations, pureCircuits } from "../../managed/veilcred/contract/index.js";
+import { Contract } from "../../managed/veilcred/contract/index.js";
 
 export interface WalletState {
   address: string;
