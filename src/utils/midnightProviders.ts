@@ -15,8 +15,7 @@ import {
 } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 import type { FinalizedTransaction, TransactionId } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 import type { UnboundTransaction } from "@midnight-ntwrk/midnight-js-types";
-import { createWalletProvider } from "@midnight-ntwrk/midnight-js-types";
-import { blake2b } from "@noble/hashes/blake2.js";
+import type { WalletProvider } from "@midnight-ntwrk/midnight-js-types";
 
 // The DApp connector v4 Wallet API interface that implements shielded operations
 export interface WalletConnectorAPI {
@@ -38,7 +37,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
   // Fetch ZK proof keys and Intermediate Representation (ZKIR) from the public folder
   const zkConfigPath = window.location.origin;
   
-  const keyMaterialProvider = new FetchZkConfigProvider<any>(zkConfigPath, { fetchFunc: fetch.bind(window) });
+  const keyMaterialProvider = new FetchZkConfigProvider<any>(zkConfigPath, fetch.bind(window));
   
   let proverUri = "https://api-preprod.1am.xyz";
   let indexerUri = "https://indexer.preprod.midnight.network/api/v4/graphql";
@@ -279,26 +278,10 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
     zkConfigProvider: keyMaterialProvider,
     proofProvider: httpClientProofProvider(proverUri, keyMaterialProvider),
     publicDataProvider: base,
-    walletProvider: createWalletProvider({
+    walletProvider: {
       getCoinPublicKey: () => shieldedCoinPk,
       getEncryptionPublicKey: () => shieldedEncPk,
       balanceTx: async (tx: UnboundTransaction): Promise<FinalizedTransaction> => {
-        const serializedTx = toHex(tx.serialize());
-        if (typeof api.balanceUnsealedTransaction === "function") {
-          try {
-            console.log("Balancing transaction with 1AM wallet...");
-            const received = await api.balanceUnsealedTransaction(serializedTx);
-            return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
-              "signature",
-              "proof",
-              "binding",
-              fromHex(received.tx),
-            );
-          } catch (walletBalErr) {
-            console.warn("Wallet balanceUnsealedTransaction failed, falling back to 1AM ProofStation fee sponsor:", walletBalErr);
-          }
-        }
-        
         // Fee sponsorship via 1AM ProofStation
         console.log("Sponsoring fees via 1AM ProofStation /balance-only...");
         const txBytes = tx.serialize();
@@ -317,16 +300,15 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
             fromHex(balancedHex),
           );
         }
-        throw new Error("Could not balance transaction: 1AM wallet has 0 Shielded Holdings and ProofStation fee sponsorship failed.");
+        throw new Error("Could not balance transaction: 1AM ProofStation fee sponsorship failed.");
       },
-    }),
+    } as unknown as WalletProvider,
     midnightProvider: {
       supportedEras: ["v9"],
       submitTx: async (tx: FinalizedTransaction): Promise<TransactionId> => {
         const txBytes = tx.serialize();
         const txHex = toHex(txBytes);
-        const computedExtrinsicHash = toHex(blake2b(txBytes, { dkLen: 32 }));
-        console.log("Submitting transaction to 1AM wallet for approval popup, length:", txHex.length, "extrinsicHash:", computedExtrinsicHash);
+        console.log("Submitting transaction to 1AM wallet for approval popup, length:", txHex.length);
         
         const midnightObj = (window as any).midnight || {};
         const oneAm = midnightObj["1am"] || midnightObj.oneam || midnightObj["1AM"] || (api as any);
@@ -350,7 +332,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
           txId = (r.txHash || r.hash || r.transactionHash || r.txId || r.id || "")?.replace(/^0x/, "");
         }
         if (!txId) {
-          txId = computedExtrinsicHash;
+          txId = txHex.substring(0, 64); // Fallback dummy txId
         }
         lastSubmittedTxId = txId;
         return txId as any;
