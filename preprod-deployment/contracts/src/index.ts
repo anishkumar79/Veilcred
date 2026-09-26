@@ -28,7 +28,7 @@ class ContractWrapper extends CompiledBBoardContract.Contract<any, any> {
 }
 
 export const CompiledBBoardContractContract = CompiledContract.make(
-  "bboard",
+  "veilcred",
   ContractWrapper as any
 ).pipe(
   CompiledContract.withCompiledFileAssets("./managed/bboard")
