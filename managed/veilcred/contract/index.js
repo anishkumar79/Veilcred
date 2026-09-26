@@ -1,5 +1,5 @@
 import * as __compactRuntime from '@midnight-ntwrk/compact-runtime';
-__compactRuntime.checkRuntimeVersion('0.16.0');
+__compactRuntime.checkRuntimeVersion('0.19.0');
 
 const _descriptor_0 = new __compactRuntime.CompactTypeBytes(32);
 
@@ -65,6 +65,8 @@ const _descriptor_7 = new _ContractAddress_0();
 
 const _descriptor_8 = new __compactRuntime.CompactTypeUnsignedInteger(255n, 1);
 
+const _descriptor_9 = new __compactRuntime.CompactTypeUnsignedInteger(4294967295n, 4);
+
 export class Contract {
   witnesses;
   constructor(...args_0) {
@@ -92,13 +94,13 @@ export class Contract {
     }
     this.witnesses = witnesses_0;
     this.circuits = {
-      registerIssuer: (...args_1) => {
+      registerIssuer: async (...args_1) => {
         if (args_1.length !== 2) {
           throw new __compactRuntime.CompactError(`registerIssuer: expected 2 arguments (as invoked from Typescript), received ${args_1.length}`);
         }
         const contextOrig_0 = args_1[0];
         const issuerKey_0 = args_1[1];
-        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
+        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.callContext.currentQueryContext != undefined)) {
           __compactRuntime.typeError('registerIssuer',
                                      'argument 1 (as invoked from Typescript)',
                                      'veilcred.compact line 53 char 1',
@@ -112,7 +114,7 @@ export class Contract {
                                      'Bytes<32>',
                                      issuerKey_0)
         }
-        const context = { ...contextOrig_0, gasCost: __compactRuntime.emptyRunningCost() };
+        const context = __compactRuntime.copyCircuitContext(contextOrig_0);
         const partialProofData = {
           input: {
             value: _descriptor_0.toValue(issuerKey_0),
@@ -122,16 +124,17 @@ export class Contract {
           publicTranscript: [],
           privateTranscriptOutputs: []
         };
-        const result_0 = this._registerIssuer_0(context,
-                                                partialProofData,
-                                                issuerKey_0);
+        const result_0 = await this._registerIssuer_0(context,
+                                                      partialProofData,
+                                                      issuerKey_0);
         partialProofData.output = { value: [], alignment: [] };
-        return { result: result_0, context: context, proofData: partialProofData, gasCost: context.gasCost };
+        __compactRuntime.finalizeCallProofData(context, partialProofData);
+        return { result: result_0, context: context, gasCost: context.callContext.currentGasCost };
       },
-      verifySig(context, ...args_1) {
+      async verifySig(context, ...args_1) {
         return { result: pureCircuits.verifySig(...args_1), context };
       },
-      verifyThreshold: (...args_1) => {
+      verifyThreshold: async (...args_1) => {
         if (args_1.length !== 4) {
           throw new __compactRuntime.CompactError(`verifyThreshold: expected 4 arguments (as invoked from Typescript), received ${args_1.length}`);
         }
@@ -139,7 +142,7 @@ export class Contract {
         const gateId_0 = args_1[1];
         const threshold_0 = args_1[2];
         const currentTime_0 = args_1[3];
-        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
+        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.callContext.currentQueryContext != undefined)) {
           __compactRuntime.typeError('verifyThreshold',
                                      'argument 1 (as invoked from Typescript)',
                                      'veilcred.compact line 96 char 1',
@@ -167,7 +170,7 @@ export class Contract {
                                      'Uint<0..18446744073709551616>',
                                      currentTime_0)
         }
-        const context = { ...contextOrig_0, gasCost: __compactRuntime.emptyRunningCost() };
+        const context = __compactRuntime.copyCircuitContext(contextOrig_0);
         const partialProofData = {
           input: {
             value: _descriptor_0.toValue(gateId_0).concat(_descriptor_2.toValue(threshold_0).concat(_descriptor_2.toValue(currentTime_0))),
@@ -177,21 +180,22 @@ export class Contract {
           publicTranscript: [],
           privateTranscriptOutputs: []
         };
-        const result_0 = this._verifyThreshold_0(context,
-                                                 partialProofData,
-                                                 gateId_0,
-                                                 threshold_0,
-                                                 currentTime_0);
+        const result_0 = await this._verifyThreshold_0(context,
+                                                       partialProofData,
+                                                       gateId_0,
+                                                       threshold_0,
+                                                       currentTime_0);
         partialProofData.output = { value: [], alignment: [] };
-        return { result: result_0, context: context, proofData: partialProofData, gasCost: context.gasCost };
+        __compactRuntime.finalizeCallProofData(context, partialProofData);
+        return { result: result_0, context: context, gasCost: context.callContext.currentGasCost };
       },
-      isVerified: (...args_1) => {
+      isVerified: async (...args_1) => {
         if (args_1.length !== 2) {
           throw new __compactRuntime.CompactError(`isVerified: expected 2 arguments (as invoked from Typescript), received ${args_1.length}`);
         }
         const contextOrig_0 = args_1[0];
         const nullifier_0 = args_1[1];
-        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
+        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.callContext.currentQueryContext != undefined)) {
           __compactRuntime.typeError('isVerified',
                                      'argument 1 (as invoked from Typescript)',
                                      'veilcred.compact line 139 char 1',
@@ -205,7 +209,7 @@ export class Contract {
                                      'Bytes<32>',
                                      nullifier_0)
         }
-        const context = { ...contextOrig_0, gasCost: __compactRuntime.emptyRunningCost() };
+        const context = __compactRuntime.copyCircuitContext(contextOrig_0);
         const partialProofData = {
           input: {
             value: _descriptor_0.toValue(nullifier_0),
@@ -215,11 +219,12 @@ export class Contract {
           publicTranscript: [],
           privateTranscriptOutputs: []
         };
-        const result_0 = this._isVerified_0(context,
-                                            partialProofData,
-                                            nullifier_0);
+        const result_0 = await this._isVerified_0(context,
+                                                  partialProofData,
+                                                  nullifier_0);
         partialProofData.output = { value: _descriptor_1.toValue(result_0), alignment: _descriptor_1.alignment() };
-        return { result: result_0, context: context, proofData: partialProofData, gasCost: context.gasCost };
+        __compactRuntime.finalizeCallProofData(context, partialProofData);
+        return { result: result_0, context: context, gasCost: context.callContext.currentGasCost };
       }
     };
     this.impureCircuits = {
@@ -233,7 +238,7 @@ export class Contract {
       isVerified: this.circuits.isVerified
     };
   }
-  initialState(...args_0) {
+  async initialState(...args_0) {
     if (args_0.length !== 1) {
       throw new __compactRuntime.CompactError(`Contract state constructor: expected 1 argument (as invoked from Typescript), received ${args_0.length}`);
     }
@@ -259,7 +264,7 @@ export class Contract {
     state_0.setOperation('registerIssuer', new __compactRuntime.ContractOperation());
     state_0.setOperation('verifyThreshold', new __compactRuntime.ContractOperation());
     state_0.setOperation('isVerified', new __compactRuntime.ContractOperation());
-    const context = __compactRuntime.createCircuitContext(__compactRuntime.dummyContractAddress(), constructorContext_0.initialZswapLocalState.coinPublicKey, state_0.data, constructorContext_0.initialPrivateState);
+    const context = __compactRuntime.createCircuitContext('constructor', __compactRuntime.dummyContractAddress(), constructorContext_0.initialZswapLocalState.coinPublicKey, state_0.data, constructorContext_0.initialPrivateState);
     const partialProofData = {
       input: { value: [], alignment: [] },
       output: undefined,
@@ -299,18 +304,18 @@ export class Contract {
                                                           new __compactRuntime.StateMap()
                                                         ).encode() } },
                                        { ins: { cached: false, n: 1 } }]);
-    state_0.data = new __compactRuntime.ChargedState(context.currentQueryContext.state.state);
+    state_0.data = new __compactRuntime.ChargedState(context.callContext.currentQueryContext.state.state);
     return {
       currentContractState: state_0,
-      currentPrivateState: context.currentPrivateState,
-      currentZswapLocalState: context.currentZswapLocalState
+      currentPrivateState: context.callContext.currentPrivateState,
+      currentZswapLocalState: context.callContext.currentZswapLocalState
     }
   }
   _persistentHash_0(value_0) {
     const result_0 = __compactRuntime.persistentHash(_descriptor_4, value_0);
     return result_0;
   }
-  _registerIssuer_0(context, partialProofData, issuerKey_0) {
+  async _registerIssuer_0(context, partialProofData, issuerKey_0) {
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
@@ -331,9 +336,9 @@ export class Contract {
   }
   _verifySig_0(issuer_0, sig_0) { return true; }
   _issuerKey_0(context, partialProofData) {
-    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
+    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.callContext.currentQueryContext.state), context.callContext.currentPrivateState, context.callContext.currentQueryContext.address);
     const [nextPrivateState_0, result_0] = this.witnesses.issuerKey(witnessContext_0);
-    context.currentPrivateState = nextPrivateState_0;
+    context.callContext.currentPrivateState = nextPrivateState_0;
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
       __compactRuntime.typeError('issuerKey',
                                  'return value',
@@ -348,9 +353,9 @@ export class Contract {
     return result_0;
   }
   _attributeValue_0(context, partialProofData) {
-    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
+    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.callContext.currentQueryContext.state), context.callContext.currentPrivateState, context.callContext.currentQueryContext.address);
     const [nextPrivateState_0, result_0] = this.witnesses.attributeValue(witnessContext_0);
-    context.currentPrivateState = nextPrivateState_0;
+    context.callContext.currentPrivateState = nextPrivateState_0;
     if (!(typeof(result_0) === 'bigint' && result_0 >= 0n && result_0 <= 18446744073709551615n)) {
       __compactRuntime.typeError('attributeValue',
                                  'return value',
@@ -365,9 +370,9 @@ export class Contract {
     return result_0;
   }
   _expiry_0(context, partialProofData) {
-    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
+    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.callContext.currentQueryContext.state), context.callContext.currentPrivateState, context.callContext.currentQueryContext.address);
     const [nextPrivateState_0, result_0] = this.witnesses.expiry(witnessContext_0);
-    context.currentPrivateState = nextPrivateState_0;
+    context.callContext.currentPrivateState = nextPrivateState_0;
     if (!(typeof(result_0) === 'bigint' && result_0 >= 0n && result_0 <= 18446744073709551615n)) {
       __compactRuntime.typeError('expiry',
                                  'return value',
@@ -382,9 +387,9 @@ export class Contract {
     return result_0;
   }
   _signature_0(context, partialProofData) {
-    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
+    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.callContext.currentQueryContext.state), context.callContext.currentPrivateState, context.callContext.currentQueryContext.address);
     const [nextPrivateState_0, result_0] = this.witnesses.signature(witnessContext_0);
-    context.currentPrivateState = nextPrivateState_0;
+    context.callContext.currentPrivateState = nextPrivateState_0;
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 64)) {
       __compactRuntime.typeError('signature',
                                  'return value',
@@ -399,9 +404,9 @@ export class Contract {
     return result_0;
   }
   _holderSecret_0(context, partialProofData) {
-    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
+    const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.callContext.currentQueryContext.state), context.callContext.currentPrivateState, context.callContext.currentQueryContext.address);
     const [nextPrivateState_0, result_0] = this.witnesses.holderSecret(witnessContext_0);
-    context.currentPrivateState = nextPrivateState_0;
+    context.callContext.currentPrivateState = nextPrivateState_0;
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
       __compactRuntime.typeError('holderSecret',
                                  'return value',
@@ -415,11 +420,11 @@ export class Contract {
     });
     return result_0;
   }
-  _verifyThreshold_0(context,
-                     partialProofData,
-                     gateId_0,
-                     threshold_0,
-                     currentTime_0)
+  async _verifyThreshold_0(context,
+                           partialProofData,
+                           gateId_0,
+                           threshold_0,
+                           currentTime_0)
   {
     const issuer_0 = this._issuerKey_0(context, partialProofData);
     const value_0 = this._attributeValue_0(context, partialProofData);
@@ -501,7 +506,7 @@ export class Contract {
                                        { ins: { cached: true, n: 1 } }]);
     return [];
   }
-  _isVerified_0(context, partialProofData, nullifier_0) {
+  async _isVerified_0(context, partialProofData, nullifier_0) {
     return _descriptor_1.fromValue(__compactRuntime.queryLedgerState(context,
                                                                      partialProofData,
                                                                      [
@@ -543,7 +548,7 @@ export function ledger(stateOrChargedState) {
   const state = stateOrChargedState instanceof __compactRuntime.StateValue ? stateOrChargedState : stateOrChargedState.state;
   const chargedState = stateOrChargedState instanceof __compactRuntime.StateValue ? new __compactRuntime.ChargedState(stateOrChargedState) : stateOrChargedState;
   const context = {
-    currentQueryContext: new __compactRuntime.QueryContext(chargedState, __compactRuntime.dummyContractAddress()),
+    callContext: { currentQueryContext: new __compactRuntime.QueryContext(chargedState, __compactRuntime.dummyContractAddress()), currentGasCost: __compactRuntime.emptyRunningCost() },
     costModel: __compactRuntime.CostModel.initialCostModel()
   };
   const partialProofData = {
@@ -821,7 +826,7 @@ export function ledger(stateOrChargedState) {
   };
 }
 const _emptyContext = {
-  currentQueryContext: new __compactRuntime.QueryContext(new __compactRuntime.ContractState().data, __compactRuntime.dummyContractAddress())
+  callContext: { currentQueryContext: new __compactRuntime.QueryContext(new __compactRuntime.ContractState().data, __compactRuntime.dummyContractAddress()), currentGasCost: __compactRuntime.emptyRunningCost() }
 };
 const _dummyContract = new Contract({
   issuerKey: (...args) => undefined,
@@ -856,4 +861,10 @@ export const pureCircuits = {
 };
 export const contractReferenceLocations =
   { tag: 'publicLedgerArray', indices: { } };
+export const expectedVk = {
+  'isVerified': 'a180366ef923492e75e03b18473d8691562fd7b2217f7f9c6bc9ae255cd9bed9',
+  'registerIssuer': '24fb4ac5643d9a201de0ec0902a42c8485198166de0be1a0938abcecfbc3ca3d',
+  'verifyThreshold': 'a8177d056b2a27a770e573c3725aec542dd4e0fa479df71babdf48e981624a56',
+};
+
 //# sourceMappingURL=index.js.map
