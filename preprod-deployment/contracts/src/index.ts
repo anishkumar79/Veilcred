@@ -27,9 +27,15 @@ class ContractWrapper extends CompiledBBoardContract.Contract<any, any> {
   }
 }
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export const CompiledBBoardContractContract = CompiledContract.make(
   "veilcred",
   ContractWrapper as any
 ).pipe(
-  CompiledContract.withCompiledFileAssets("./managed/bboard")
+  CompiledContract.withCompiledFileAssets(path.resolve(__dirname, "./managed/bboard"))
 ) as any;
