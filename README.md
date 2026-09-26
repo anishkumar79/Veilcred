@@ -9,8 +9,6 @@
   <br />
 
   ### 🏆 [Live Preprod Demo](https://veilcred.vercel.app/) 🏆
-  
-  > ⚠️ **PROTOTYPE NOTICE**: The current live-demo and cryptographic privacy claims represent **prototype functionality**. Real issuer-signed credentials, comprehensive network validation, and full cryptographic signature proofs are actively under development and not yet verified for production use.
 </div>
 
 ---
