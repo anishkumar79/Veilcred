@@ -34,6 +34,7 @@ export interface CredentialInput {
   threshold: number; // public: minimum required value
   expiryTimestamp: number; // private: unix seconds
   issuerKey: string; // private: which approved issuer signed this
+  signature: string; // private: the real cryptographic signature from the issuer
   holderSecret: string; // private: user-held secret for nullifier derivation
 }
 
@@ -191,6 +192,15 @@ export async function submitVerification(
     const secretStr = input.holderSecret || randomHex(16);
     const secretBytes = await sha256Bytes(secretStr);
 
+    // Convert signature from hex to bytes, or fallback to empty byte array if not provided
+    const signatureBytes = new Uint8Array(64);
+    if (input.signature && input.signature.length > 0) {
+      const hex = input.signature.replace(/^0x/, "");
+      for (let i = 0; i < Math.min(hex.length / 2, 64); i++) {
+        signatureBytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+      }
+    }
+
     const providers = await createMidnightProviders(api, issuerBytes);
 
     // Inject the private state for this specific proof verification
@@ -198,7 +208,7 @@ export async function submitVerification(
         issuerKey: issuerBytes,
         attributeValue: BigInt(input.attributeValue),
         expiry: BigInt(input.expiryTimestamp),
-        signature: new Uint8Array(64), // Mocked signature format for hackathon
+        signature: signatureBytes,
         holderSecret: secretBytes 
     });
 

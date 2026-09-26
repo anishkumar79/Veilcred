@@ -24,6 +24,7 @@ export function CredentialProver({
   const [presetIndex, setPresetIndex] = useState(0);
   const [attributeValue, setAttributeValue] = useState("");
   const [issuerKey, setIssuerKey] = useState("did:midnight:approved-issuer-01");
+  const [signature, setSignature] = useState("");
   const [holderSecret, setHolderSecret] = useState("");
   const [expiryDays, setExpiryDays] = useState("365");
 
@@ -47,6 +48,7 @@ export function CredentialProver({
       expiryTimestamp:
         Math.floor(Date.now() / 1000) + Number(expiryDays || "0") * 86400,
       issuerKey,
+      signature,
       holderSecret: secret,
     });
   }
@@ -135,6 +137,27 @@ export function CredentialProver({
               className="w-full rounded-lg border border-paper-300 bg-white px-3 py-2.5 text-sm focus-visible:outline-brass-600"
             />
           </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="signature"
+            className="block text-sm mb-1.5 text-ink-800"
+          >
+            Issuer signature (Hex)
+          </label>
+          <input
+            id="signature"
+            type="text"
+            required
+            value={signature}
+            onChange={(e) => setSignature(e.target.value)}
+            placeholder="e.g. 1a2b3c..."
+            className="w-full rounded-lg border border-paper-300 bg-white px-3 py-2.5 text-sm font-mono focus-visible:outline-brass-600"
+          />
+          <p className="mt-1 text-xs text-ink-800/60">
+            The cryptographic signature provided by the issuer.
+          </p>
         </div>
 
         <div>
