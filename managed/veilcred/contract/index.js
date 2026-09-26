@@ -142,28 +142,28 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('verifyThreshold',
                                      'argument 1 (as invoked from Typescript)',
-                                     'veilcred.compact line 94 char 1',
+                                     'veilcred.compact line 96 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(gateId_0.buffer instanceof ArrayBuffer && gateId_0.BYTES_PER_ELEMENT === 1 && gateId_0.length === 32)) {
           __compactRuntime.typeError('verifyThreshold',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'veilcred.compact line 94 char 1',
+                                     'veilcred.compact line 96 char 1',
                                      'Bytes<32>',
                                      gateId_0)
         }
         if (!(typeof(threshold_0) === 'bigint' && threshold_0 >= 0n && threshold_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('verifyThreshold',
                                      'argument 2 (argument 3 as invoked from Typescript)',
-                                     'veilcred.compact line 94 char 1',
+                                     'veilcred.compact line 96 char 1',
                                      'Uint<0..18446744073709551616>',
                                      threshold_0)
         }
         if (!(typeof(currentTime_0) === 'bigint' && currentTime_0 >= 0n && currentTime_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('verifyThreshold',
                                      'argument 3 (argument 4 as invoked from Typescript)',
-                                     'veilcred.compact line 94 char 1',
+                                     'veilcred.compact line 96 char 1',
                                      'Uint<0..18446744073709551616>',
                                      currentTime_0)
         }
@@ -194,14 +194,14 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('isVerified',
                                      'argument 1 (as invoked from Typescript)',
-                                     'veilcred.compact line 137 char 1',
+                                     'veilcred.compact line 139 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(nullifier_0.buffer instanceof ArrayBuffer && nullifier_0.BYTES_PER_ELEMENT === 1 && nullifier_0.length === 32)) {
           __compactRuntime.typeError('isVerified',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'veilcred.compact line 137 char 1',
+                                     'veilcred.compact line 139 char 1',
                                      'Bytes<32>',
                                      nullifier_0)
         }
@@ -337,7 +337,7 @@ export class Contract {
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
       __compactRuntime.typeError('issuerKey',
                                  'return value',
-                                 'veilcred.compact line 76 char 1',
+                                 'veilcred.compact line 78 char 1',
                                  'Bytes<32>',
                                  result_0)
     }
@@ -354,7 +354,7 @@ export class Contract {
     if (!(typeof(result_0) === 'bigint' && result_0 >= 0n && result_0 <= 18446744073709551615n)) {
       __compactRuntime.typeError('attributeValue',
                                  'return value',
-                                 'veilcred.compact line 77 char 1',
+                                 'veilcred.compact line 79 char 1',
                                  'Uint<0..18446744073709551616>',
                                  result_0)
     }
@@ -371,7 +371,7 @@ export class Contract {
     if (!(typeof(result_0) === 'bigint' && result_0 >= 0n && result_0 <= 18446744073709551615n)) {
       __compactRuntime.typeError('expiry',
                                  'return value',
-                                 'veilcred.compact line 78 char 1',
+                                 'veilcred.compact line 80 char 1',
                                  'Uint<0..18446744073709551616>',
                                  result_0)
     }
@@ -388,7 +388,7 @@ export class Contract {
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 64)) {
       __compactRuntime.typeError('signature',
                                  'return value',
-                                 'veilcred.compact line 79 char 1',
+                                 'veilcred.compact line 81 char 1',
                                  'Bytes<64>',
                                  result_0)
     }
@@ -405,7 +405,7 @@ export class Contract {
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
       __compactRuntime.typeError('holderSecret',
                                  'return value',
-                                 'veilcred.compact line 80 char 1',
+                                 'veilcred.compact line 82 char 1',
                                  'Bytes<32>',
                                  result_0)
     }
