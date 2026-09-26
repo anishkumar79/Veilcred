@@ -128,7 +128,7 @@ export async function deployVeilcredContractReal(providers: any): Promise<string
       args: []
     });
     
-    const deployedAddress = deployed.deployTxData.public.contractAddress;
+    const deployedAddress = (deployed as any).deployTxData.public.contractAddress;
     console.log("Deployed on-chain at:", deployedAddress);
     alert(`Deployed successfully! New contract address is: ${deployedAddress}\n\nPlease copy this and update deployed_contract.json`);
     return deployedAddress;
