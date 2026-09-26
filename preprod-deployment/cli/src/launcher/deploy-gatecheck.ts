@@ -15,7 +15,7 @@ import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-pri
 import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { createWalletProvider, createMidnightProvider } from '@midnight-ntwrk/midnight-js-types';
 import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
-import { Contract as VeilcredContract } from '../../../../../managed/veilcred/contract/index.js';
+import { Contract as VeilcredContract } from '../../../../managed/veilcred/contract/index.js';
 import { createLogger } from '../logger-utils.js';
 import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import * as Rx from 'rxjs';
