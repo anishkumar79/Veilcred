@@ -14,7 +14,8 @@ import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { createWalletProvider, createMidnightProvider } from '@midnight-ntwrk/midnight-js-types';
-import { CompiledBBoardContractContract } from '@midnight-ntwrk/bboard-contract';
+import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
+import { Contract as VeilcredContract } from '../../../../../managed/veilcred/contract/index.js';
 import { createLogger } from '../logger-utils.js';
 import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import * as Rx from 'rxjs';
@@ -227,8 +228,9 @@ async function main() {
   console.log("Deploying contract...");
   let success = false;
   try {
+    const compiledContract = (CompiledContract as any).make("veilcred", VeilcredContract);
     const deployed = await deployContract(providers as any, {
-      compiledContract: CompiledBBoardContractContract,
+      compiledContract: compiledContract as any,
       args: []
     });
 

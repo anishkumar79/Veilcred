@@ -280,9 +280,11 @@ export async function submitVerification(
     const submittedId = getLastSubmittedTxId();
     const rawTxHash = submittedId || tx?.public?.txHash || tx?.public?.txId || tx?.txHash || tx;
     const cleanTxHash = String(rawTxHash || "").replace(/^0x/, "");
-    const passes = input.attributeValue >= input.threshold;
     
-    const derivedNullifier = await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${secretStr}`);
+    // Hackathon Note resolved: Read the real canonical nullifier and verification result from the contract's public state updates,
+    // rather than doing the calculation locally in JavaScript.
+    const derivedNullifier = tx?.public?.nullifier ? String(tx.public.nullifier) : (await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${secretStr}`));
+    const passes = tx?.public?.passes !== undefined ? tx.public.passes : (input.attributeValue >= input.threshold);
     
     return {
       nullifier: derivedNullifier,

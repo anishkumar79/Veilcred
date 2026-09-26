@@ -1,10 +1,8 @@
 import { Layout } from "./components/Layout";
 import { WalletConnect } from "./components/WalletConnect";
 import { CredentialProver } from "./components/CredentialProver";
-import { useState } from "react";
 import { VerificationLedger } from "./components/VerificationLedger";
 import { useMidnight } from "./hooks/useMidnight";
-import { deployVeilcredContract } from "./utils/contract";
 
 function App() {
   const { status, wallet, error, ledger, connect, disconnect, prove } =
