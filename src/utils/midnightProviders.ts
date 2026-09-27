@@ -37,7 +37,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
   // Fetch ZK proof keys and Intermediate Representation (ZKIR) from the public folder
   const zkConfigPath = window.location.origin;
   
-  const keyMaterialProvider = new FetchZkConfigProvider<any>(zkConfigPath, { fetch: fetch.bind(window) as any });
+  const keyMaterialProvider = new FetchZkConfigProvider<any>(zkConfigPath, { fetchFunc: fetch.bind(window) as any });
   
   let proverUri = "https://api-preprod.1am.xyz";
   let indexerUri = "https://indexer.preprod.midnight.network/api/v4/graphql";
