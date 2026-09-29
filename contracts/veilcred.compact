@@ -67,7 +67,7 @@ export circuit initAdmin(): [] {
   // without knowing the original secret.
   const derived: Bytes<32> = persistentHash<Bytes<32>>(secret);
   // Ensure this can only be called once. We use approvedIssuers to store a sentinel.
-  assert(!approvedIssuers.member(derived), "admin already initialised");
+  assert(!approvedIssuers.member(disclose(derived)), "admin already initialised");
   approvedIssuers.insert(disclose(derived));
   adminKey = disclose(derived);
 }
@@ -116,7 +116,7 @@ export circuit verifySig(issuer: Bytes<32>, sig: Bytes<64>): Boolean {
   const commitment: Bytes<32> = persistentHash<SigPayload>(payload);
   // The commitment must appear in the approvedIssuers set, meaning an
   // admin previously registered this (issuer, sig) pair on-chain.
-  return approvedIssuers.member(commitment);
+  return approvedIssuers.member(disclose(commitment));
 }
 
 struct NullifierInput {
