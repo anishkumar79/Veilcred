@@ -35,13 +35,13 @@ jobs:
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
           export PATH="$HOME/.local/bin:$PATH"
           compact update
-          compactc --version
+          compact --version
 
       - name: Compile Contract
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           mkdir -p preprod-deployment/contracts/src/managed/veilcred
-          compactc compile contracts/veilcred.compact preprod-deployment/contracts/src/managed/veilcred
+          compact compile contracts/veilcred.compact preprod-deployment/contracts/src/managed/veilcred
           
       - name: Copy contract artifacts into dist workspace
         run: |

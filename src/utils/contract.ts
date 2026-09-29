@@ -114,6 +114,7 @@ export async function deployVeilcredContractReal(providers: any): Promise<string
     
     // The Contract constructor requires witnesses, even if empty.
     const witnesses = {
+      adminSecret: () => undefined as any,
       issuerKey: () => undefined as any,
       attributeValue: () => undefined as any,
       expiry: () => undefined as any,
@@ -205,6 +206,7 @@ export async function submitVerification(
 
     // Inject the private state for this specific proof verification
     providers.privateStateProvider.get = async () => ({
+        adminSecret: new Uint8Array(32),
         issuerKey: issuerBytes,
         attributeValue: BigInt(input.attributeValue),
         expiry: BigInt(input.expiryTimestamp),
@@ -216,6 +218,7 @@ export async function submitVerification(
     class VeilcredContractWrapper extends (Contract as any) {
       constructor() {
         super({
+          adminSecret: (ctx: any) => [ctx.privateState, ctx.privateState.adminSecret],
           issuerKey: (ctx: any) => [ctx.privateState, ctx.privateState.issuerKey],
           attributeValue: (ctx: any) => [ctx.privateState, ctx.privateState.attributeValue],
           expiry: (ctx: any) => [ctx.privateState, ctx.privateState.expiry],
@@ -245,34 +248,12 @@ export async function submitVerification(
     const digest = await crypto.subtle.digest("SHA-256", data);
     const gateIdBytes = new Uint8Array(digest);
     
-    console.log("Step 1: Registering issuer on-chain...");
-    let tx: any;
-    
-    // Step 1: Register the issuer (if not already registered)
-    try {
-      resetLastSubmittedTxId();
-      tx = await Promise.race([
-        (client.callTx as any).registerIssuer(issuerBytes),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("registerIssuer timeout")), 90000))
-      ]);
-      console.log("registerIssuer tx submitted:", tx);
-      // Wait for indexer to pick up the registerIssuer tx (skip in fast mock environments)
-      const waitMs = typeof (global as any).vi !== 'undefined' ? 0 : 5000;
-      if (waitMs > 0) await new Promise(r => setTimeout(r, waitMs));
-    } catch (regErr: any) {
-      const regMsg = String(regErr?.message || regErr || "");
-      // If already registered or submission dup error, that's fine — proceed
-      if (regMsg.includes("already") || regMsg.includes("duplicate") || regMsg.includes("SubmissionError")) {
-        console.warn("registerIssuer failed (possibly already registered), proceeding to verifyThreshold:", regMsg);
-      } else {
-        console.error("registerIssuer failed with unexpected error:", regMsg);
-        throw new Error(`Failed to register issuer: ${regMsg}`);
-      }
-    }
+    // Step 1: Execute the contract circuit (verifyThreshold) — prompts 1AM wallet approval popup
 
     // Step 2: Verify threshold (the main proof)
     console.log("Step 2: Running verifyThreshold proof...");
     resetLastSubmittedTxId();
+    let tx: any;
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("On-chain verification timed out waiting for wallet/network.")), 90000)
     );
