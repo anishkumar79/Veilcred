@@ -3,6 +3,7 @@ import { WitnessContext } from "@midnight-ntwrk/midnight-js-protocol/compact-run
 
 
 export type VeilcredPrivateState = {
+  readonly adminSecret?: Uint8Array;
   readonly issuerKey?: Uint8Array;
   readonly attributeValue?: bigint;
   readonly expiry?: bigint;
@@ -13,6 +14,7 @@ export type VeilcredPrivateState = {
 export const createVeilcredPrivateState = (
   state?: Partial<VeilcredPrivateState>
 ): VeilcredPrivateState => ({
+  adminSecret: state?.adminSecret ?? new Uint8Array(32),
   issuerKey: state?.issuerKey ?? new Uint8Array(32),
   attributeValue: state?.attributeValue ?? 0n,
   expiry: state?.expiry ?? 0n,
@@ -21,6 +23,13 @@ export const createVeilcredPrivateState = (
 });
 
 export const witnesses = {
+  adminSecret: ({
+    privateState,
+  }: WitnessContext<Ledger, VeilcredPrivateState>): [
+    VeilcredPrivateState,
+    Uint8Array,
+  ] => [privateState, privateState?.adminSecret ?? new Uint8Array(32)],
+
   issuerKey: ({
     privateState,
   }: WitnessContext<Ledger, VeilcredPrivateState>): [

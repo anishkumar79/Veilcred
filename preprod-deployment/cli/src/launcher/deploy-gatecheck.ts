@@ -170,6 +170,10 @@ async function main() {
       args: []
     });
 
+    console.log("Calling initAdmin to lock the admin key...");
+    await (deployed as any).callTx.initAdmin();
+    console.log("Admin key successfully locked.");
+
     const contractAddress = (deployed as any).deployTxData.public.contractAddress;
     const explorerUrl = `https://preprod.midnightexplorer.com/contracts/0x${contractAddress}`;
     console.log("================================================================================");

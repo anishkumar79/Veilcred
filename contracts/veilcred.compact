@@ -50,6 +50,10 @@ export ledger verifications: Map<Bytes<32>, Boolean>;
 // Only the holder of the matching admin secret can register new issuers.
 export ledger adminKey: Bytes<32>;
 
+constructor() {
+  adminKey = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
 // -----------------------------------------------------------------------
 // Witness: the deployer / admin supplies their secret key privately.
 // -----------------------------------------------------------------------
