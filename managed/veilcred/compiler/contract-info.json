@@ -4,6 +4,18 @@
   "runtime-version": "0.19.0",
   "circuits": [
     {
+      "name": "initAdmin",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
       "name": "registerIssuer",
       "pure": false,
       "proof": true,
@@ -24,8 +36,8 @@
     },
     {
       "name": "verifySig",
-      "pure": true,
-      "proof": false,
+      "pure": false,
+      "proof": true,
       "arguments": [
         {
           "name": "issuer",
@@ -98,6 +110,15 @@
     }
   ],
   "witnesses": [
+    {
+      "name": "adminSecret",
+      "arguments": [
+      ],
+      "result type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
+    },
     {
       "name": "issuerKey",
       "arguments": [
@@ -178,6 +199,16 @@
       },
       "value": {
         "type-name": "Boolean"
+      }
+    },
+    {
+      "name": "adminKey",
+      "index": 3,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Bytes",
+        "length": 32
       }
     }
   ]

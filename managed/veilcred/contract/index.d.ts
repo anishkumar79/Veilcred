@@ -1,6 +1,7 @@
 import type * as __compactRuntime from '@midnight-ntwrk/compact-runtime';
 
 export type Witnesses<PS> = {
+  adminSecret(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
   issuerKey(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
   attributeValue(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, bigint];
   expiry(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, bigint];
@@ -9,8 +10,12 @@ export type Witnesses<PS> = {
 }
 
 export type ImpureCircuits<PS> = {
+  initAdmin(context: __compactRuntime.CircuitContext<PS>): Promise<__compactRuntime.CircuitResults<PS, []>>;
   registerIssuer(context: __compactRuntime.CircuitContext<PS>,
                  issuerKey_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  verifySig(context: __compactRuntime.CircuitContext<PS>,
+            issuer_0: Uint8Array,
+            sig_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
   verifyThreshold(context: __compactRuntime.CircuitContext<PS>,
                   gateId_0: Uint8Array,
                   threshold_0: bigint,
@@ -20,8 +25,12 @@ export type ImpureCircuits<PS> = {
 }
 
 export type ProvableCircuits<PS> = {
+  initAdmin(context: __compactRuntime.CircuitContext<PS>): Promise<__compactRuntime.CircuitResults<PS, []>>;
   registerIssuer(context: __compactRuntime.CircuitContext<PS>,
                  issuerKey_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  verifySig(context: __compactRuntime.CircuitContext<PS>,
+            issuer_0: Uint8Array,
+            sig_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
   verifyThreshold(context: __compactRuntime.CircuitContext<PS>,
                   gateId_0: Uint8Array,
                   threshold_0: bigint,
@@ -31,10 +40,10 @@ export type ProvableCircuits<PS> = {
 }
 
 export type PureCircuits = {
-  verifySig(issuer_0: Uint8Array, sig_0: Uint8Array): boolean;
 }
 
 export type Circuits<PS> = {
+  initAdmin(context: __compactRuntime.CircuitContext<PS>): Promise<__compactRuntime.CircuitResults<PS, []>>;
   registerIssuer(context: __compactRuntime.CircuitContext<PS>,
                  issuerKey_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
   verifySig(context: __compactRuntime.CircuitContext<PS>,
@@ -68,6 +77,7 @@ export type Ledger = {
     lookup(key_0: Uint8Array): boolean;
     [Symbol.iterator](): Iterator<[Uint8Array, boolean]>
   };
+  readonly adminKey: Uint8Array;
 }
 
 export type ContractReferenceLocations = any;
