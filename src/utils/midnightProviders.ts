@@ -87,6 +87,7 @@ export async function createMidnightProviders(api: WalletConnectorAPI, _approved
     if (cachedContractState) return cachedContractState;
     try {
       const dummyContract = new Contract({
+        adminSecret: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
         issuerKey: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
         attributeValue: (ctx: any) => [ctx.privateState, 0n],
         expiry: (ctx: any) => [ctx.privateState, 0n],

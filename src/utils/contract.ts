@@ -169,6 +169,16 @@ export async function submitVerification(
   _wallet: WalletState,
   input: CredentialInput
 ): Promise<VerificationRecord> {
+  // ── wallet identity guards (must run before anything else) ──────────
+  if (!_wallet.address || _wallet.address.trim().length === 0) {
+    throw new Error("Wallet address is required — connect your 1AM wallet before verifying.");
+  }
+  if (_wallet.network !== "preprod") {
+    throw new Error(
+      "Network mismatch: expected 'preprod' but wallet is on '" + _wallet.network + "'. Switch your wallet to Midnight Preprod."
+    );
+  }
+
   const now = Math.floor(Date.now() / 1000);
   if (input.expiryTimestamp <= now) {
     throw new Error("Credential has expired — cannot generate a valid proof");
@@ -176,6 +186,7 @@ export async function submitVerification(
   if (!input.issuerKey || input.issuerKey.trim().length === 0) {
     throw new Error("No issuer key supplied — is this credential signed?");
   }
+
 
   let api = cachedWalletApi;
   if (!api) {
