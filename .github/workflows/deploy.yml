@@ -12,6 +12,7 @@ on:
     paths:
       - '.github/workflows/deploy.yml'
       - 'preprod-deployment/**'
+      - 'contracts/veilcred.compact'
 
 jobs:
   deploy:
@@ -30,30 +31,37 @@ jobs:
           npm install
           npm install --no-save tsx
 
-      - name: Install Compact compiler
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
-          compact update
-          compact --version
-
-      - name: Compile Contract
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          mkdir -p preprod-deployment/contracts/src/managed/veilcred
-          compact compile contracts/veilcred.compact preprod-deployment/contracts/src/managed/veilcred
-          
-      - name: Copy contract artifacts into dist workspace
-        run: |
-          mkdir -p preprod-deployment/contracts/dist/managed/veilcred
-          cp -r preprod-deployment/contracts/src/managed/veilcred/* preprod-deployment/contracts/dist/managed/veilcred/
-          echo "Contract artifacts copied successfully:"
-          ls -la preprod-deployment/contracts/src/managed/veilcred
-
       - name: Install contracts dependencies
         run: |
           cd preprod-deployment/contracts
           npm install
+
+      # -----------------------------------------------------------------------
+      # Compile using the compact toolchain. compact 0.34.0 is now compatible
+      # because we upgraded wallet-sdk to rc.0 which ships ledger-v9 1.0.0-rc.5
+      # (rc.5 supports compact runtime 0.19.0, which rc.4 did not).
+      # -----------------------------------------------------------------------
+      - name: Install Compact compiler
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.compact/bin" >> $GITHUB_PATH
+
+      - name: Compile Contract
+        run: |
+          compact update
+          compact --version
+          mkdir -p preprod-deployment/contracts/src/managed/veilcred
+          compact compile contracts/veilcred.compact preprod-deployment/contracts/src/managed/veilcred
+          echo "Compiled keys:"
+          ls preprod-deployment/contracts/src/managed/veilcred/keys/
+
+      - name: Copy contract artifacts into dist workspace
+        run: |
+          mkdir -p preprod-deployment/contracts/dist/managed/veilcred
+          cp -r preprod-deployment/contracts/src/managed/veilcred/* preprod-deployment/contracts/dist/managed/veilcred/
+          echo "Contract artifacts:"
+          ls preprod-deployment/contracts/src/managed/veilcred
 
       - name: Build Contract Bindings
         run: |
