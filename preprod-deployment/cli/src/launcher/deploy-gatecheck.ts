@@ -52,70 +52,8 @@ async function main() {
     }
   }
 
-  const candidateAddress = process.env.FORCE_DEPLOY ? null : "5c05efc1a9fcd0a0ea1f498d8622c3bf67e99ea5983345fbc1a10440817e2127";
-  if (candidateAddress) {
-    console.log(`Checking if Veilcred contract ${candidateAddress} is already deployed and active on Preprod indexer...`);
-    try {
-      const q = JSON.stringify({ query: `{ contractAction(address: "${candidateAddress}") { address state } }` });
-      const res = await fetch(envConfiguration.indexer, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: q,
-      });
-      const data = (await res.json()) as any;
-      if (data?.data?.contractAction?.address) {
-        console.log("================================================================================");
-        console.log("🎉 SUCCESS! VEILCRED CONTRACT VERIFIED AND ACTIVE ON PREPROD!");
-        console.log("CONTRACT_ADDRESS=" + candidateAddress);
-        console.log("Contract Address:", candidateAddress);
-        const explorerUrl = `https://preprod.midnightexplorer.com/contracts/0x${candidateAddress}`;
-        console.log("Explorer:", explorerUrl);
-        console.log("================================================================================");
-
-        const deploymentInfo = {
-          network: "preprod",
-          contractName: "veilcred",
-          contractAddress: candidateAddress,
-          explorerUrl,
-          indexer: envConfiguration.indexer,
-          node: envConfiguration.node,
-          deployedAt: "2026-09-14T15:25:50.002Z",
-        };
-
-        fs.writeFileSync('deployment.json', JSON.stringify(deploymentInfo, null, 2));
-        fs.writeFileSync('../../deployed_contract.json', JSON.stringify(deploymentInfo, null, 2));
-        try {
-          fs.writeFileSync('../../public/deployed_contract.json', JSON.stringify(deploymentInfo, null, 2));
-        } catch {}
-
-        if (process.env.GITHUB_STEP_SUMMARY) {
-          try {
-            fs.appendFileSync(
-              process.env.GITHUB_STEP_SUMMARY,
-              `## 🎉 Midnight Preprod Deployment Verified!\n\n` +
-              `| Field | Value |\n` +
-              `| --- | --- |\n` +
-              `| **Contract** | Veilcred Confidential Verifier |\n` +
-              `| **Contract Address** | \`0x${candidateAddress}\` |\n` +
-              `| **Network** | Midnight Preprod |\n` +
-              `| **Explorer** | [View on Midnight Explorer](${explorerUrl}) |\n` +
-              `| **Deployed At** | ${deploymentInfo.deployedAt} |\n\n` +
-              `Contract is verified active on Preprod and recorded in \`deployed_contract.json\`.\n`
-            );
-          } catch (e) {
-            console.warn("Could not write GITHUB_STEP_SUMMARY", e);
-          }
-        }
-
-        try {
-          await testEnv.shutdown();
-        } catch {}
-        process.exit(0);
-      }
-    } catch (e: any) {
-      console.warn("Pre-flight contract verification check encountered an error:", e.message);
-    }
-  }
+  // No hardcoded address — always attempt a real deployment so we get
+  // a genuine contract address back from the chain.
 
   console.log("Building wallet provider...");
   // Use the testkit-js built-in MidnightWalletProvider which supports v9 ledger
@@ -182,10 +120,10 @@ async function main() {
   let zkPath = config.zkConfigPath;
   const zkCandidates = [
     config.zkConfigPath,
-    path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'bboard'),
-    path.resolve(currentDir, '..', '..', 'contracts', 'dist', 'managed', 'bboard'),
-    path.resolve(process.cwd(), '../contracts/src/managed/bboard'),
-    path.resolve(process.cwd(), 'contracts/src/managed/bboard'),
+    path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'veilcred'),
+    path.resolve(currentDir, '..', '..', 'contracts', 'dist', 'managed', 'veilcred'),
+    path.resolve(process.cwd(), '../contracts/src/managed/veilcred'),
+    path.resolve(process.cwd(), 'contracts/src/managed/veilcred'),
     path.resolve(process.cwd(), '../../managed/veilcred'),
     path.resolve(process.cwd(), '../managed/veilcred'),
     path.resolve(process.cwd(), 'managed/veilcred'),

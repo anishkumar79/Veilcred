@@ -33,12 +33,12 @@ jobs:
       - name: Copy pre-compiled v9 (0.16.0) contract artifacts into deployment workspace
         run: |
           # The contract is compiled with compactc 0.31.1 (compact-runtime 0.16.0)
-          mkdir -p preprod-deployment/contracts/src/managed/bboard
-          cp -r managed/veilcred/* preprod-deployment/contracts/src/managed/bboard/
-          mkdir -p preprod-deployment/contracts/dist/managed/bboard
-          cp -r managed/veilcred/* preprod-deployment/contracts/dist/managed/bboard/
+          mkdir -p preprod-deployment/contracts/src/managed/veilcred
+          cp -r managed/veilcred/* preprod-deployment/contracts/src/managed/veilcred/
+          mkdir -p preprod-deployment/contracts/dist/managed/veilcred
+          cp -r managed/veilcred/* preprod-deployment/contracts/dist/managed/veilcred/
           echo "Contract artifacts copied successfully:"
-          ls -la preprod-deployment/contracts/src/managed/bboard
+          ls -la preprod-deployment/contracts/src/managed/veilcred
 
       - name: Install contracts dependencies
         run: |
@@ -65,7 +65,7 @@ jobs:
         with:
           path: |
             ~/.midnight
-            preprod-deployment/cli/bboard-private-state
+            preprod-deployment/cli/veilcred-private-state
             preprod-deployment/cli/wallet-state
             preprod-deployment/cli/level
             preprod-deployment/cli/.level
@@ -88,7 +88,7 @@ jobs:
         with:
           path: |
             ~/.midnight
-            preprod-deployment/cli/bboard-private-state
+            preprod-deployment/cli/veilcred-private-state
             preprod-deployment/cli/wallet-state
             preprod-deployment/cli/level
             preprod-deployment/cli/.level

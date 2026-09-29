@@ -109,9 +109,9 @@ export class StandaloneConfig implements Config {
     setNetworkId('undeployed');
     return new LocalStandaloneTestEnvironment(logger);
   }
-  privateStateStoreName = 'bboard-private-state';
+  privateStateStoreName = 'veilcred-private-state';
   logDir = path.resolve(currentDir, '..', 'logs', 'standalone', `${new Date().toISOString()}.log`);
-  zkConfigPath = path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'bboard');
+  zkConfigPath = path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'veilcred');
   generateDust = false;
   explorerUrl = '';
 }
@@ -121,9 +121,9 @@ export class PreviewRemoteConfig implements Config {
     setNetworkId('preview');
     return new PreviewTestEnvironment(logger);
   }
-  privateStateStoreName = 'bboard-private-state';
+  privateStateStoreName = 'veilcred-private-state';
   logDir = path.resolve(currentDir, '..', 'logs', 'preview-remote', `${new Date().toISOString()}.log`);
-  zkConfigPath = path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'bboard');
+  zkConfigPath = path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'veilcred');
   generateDust = true;
   explorerUrl = 'https://explorer.preview.midnight.network/contracts/stream/{contractAddress}';
 }
@@ -133,9 +133,9 @@ export class PreprodRemoteConfig implements Config {
     setNetworkId('preprod');
     return new PreprodTestEnvironment(logger);
   }
-  privateStateStoreName = 'bboard-private-state';
+  privateStateStoreName = 'veilcred-private-state';
   logDir = path.resolve(currentDir, '..', 'logs', 'preprod-remote', `${new Date().toISOString()}.log`);
-  zkConfigPath = path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'bboard');
+  zkConfigPath = path.resolve(currentDir, '..', '..', 'contracts', 'src', 'managed', 'veilcred');
   generateDust = true;
   explorerUrl = 'https://explorer.preprod.midnight.network/contracts/stream/{contractAddress}';
 }

@@ -1,5 +1,6 @@
-import { Ledger } from "./managed/bboard/contract/index.js";
+import { Ledger } from "./managed/veilcred/contract/index.js";
 import { WitnessContext } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
+
 
 export type VeilcredPrivateState = {
   readonly issuerKey?: Uint8Array;

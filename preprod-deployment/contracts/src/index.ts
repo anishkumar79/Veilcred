@@ -1,31 +1,13 @@
-// This file is part of midnightntwrk/example-bboard.
-// Copyright (C) Midnight Foundation
 // SPDX-License-Identifier: Apache-2.0
-// Licensed under the Apache License, Version 2.0 (the "License");
-// You may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Veilcred contract entry-point — replaces the old bboard stub.
 
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 
-export * from "./managed/bboard/contract/index.js";
+export * from "./managed/veilcred/contract/index.js";
 export * from "./witnesses";
 
-import * as CompiledBBoardContract from "./managed/bboard/contract/index.js";
+import * as CompiledVeilcredContract from "./managed/veilcred/contract/index.js";
 import * as Witnesses from "./witnesses";
-
-class ContractWrapper extends CompiledBBoardContract.Contract<any, any> {
-  constructor() {
-    super(Witnesses.witnesses);
-  }
-}
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -33,9 +15,22 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+class ContractWrapper extends CompiledVeilcredContract.Contract<any, any> {
+  constructor() {
+    super(Witnesses.witnesses);
+  }
+}
+
+/**
+ * The fully compiled Veilcred contract, ready to be passed to
+ * deployContract() / findDeployedContract() from midnight-js-contracts.
+ *
+ * Named CompiledBBoardContractContract for backwards-compat with the
+ * deploy-gatecheck launcher which imports it by that name.
+ */
 export const CompiledBBoardContractContract = CompiledContract.make(
   "veilcred",
   ContractWrapper as any
 ).pipe(
-  CompiledContract.withCompiledFileAssets(path.resolve(__dirname, "./managed/bboard"))
+  CompiledContract.withCompiledFileAssets(path.resolve(__dirname, "./managed/veilcred"))
 ) as any;
