@@ -86,18 +86,25 @@ vi.mock('@midnight-ntwrk/midnight-js-contracts', () => ({
         }
 
         const passes = attributeValue >= threshold;
-        const nullifier = `nullifier:${gateIdBytes}:${issuerKey}:${holderSecret}`;
+        const nullifierStr = `nullifier:${gateIdBytes}:${issuerKey}:${holderSecret}`;
         
-        if (onChainUsedNullifiers.has(nullifier)) {
+        if (onChainUsedNullifiers.has(nullifierStr)) {
           throw new Error('credential already used at this gate');
         }
         if (expiry <= currentTime) {
           throw new Error('credential has expired');
         }
 
-        onChainUsedNullifiers.add(nullifier);
-        onChainVerifications.set(nullifier, passes);
-        return { public: { txHash: '0xaa', nullifier, passes } };
+        onChainUsedNullifiers.add(nullifierStr);
+        onChainVerifications.set(nullifierStr, passes);
+        
+        // Mock the bytes output matching the real Compact circuit return type
+        const nullifierBytes = new Uint8Array(32);
+        // fake bytes for test
+        const nullifierHex = nodeCrypto.createHash('sha256').update(nullifierStr).digest('hex');
+        for (let i = 0; i < 32; i++) nullifierBytes[i] = parseInt(nullifierHex.slice(i*2, i*2+2), 16);
+        
+        return { public: { txHash: '0xaa', nullifier: nullifierBytes, passes } };
       }),
       isVerified: vi.fn().mockImplementation(async ({ nullifier }: any) => {
         return { public: { result: onChainVerifications.get(nullifier) ?? false } };

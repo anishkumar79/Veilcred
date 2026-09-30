@@ -285,8 +285,11 @@ export async function submitVerification(
     
     // Hackathon Note resolved: Read the real canonical nullifier and verification result from the contract's public state updates,
     // rather than doing the calculation locally in JavaScript.
-    const derivedNullifier = tx?.public?.nullifier ? String(tx.public.nullifier) : (await sha256Hex(`${input.gateLabel}:${input.issuerKey}:${secretStr}`));
-    const passes = tx?.public?.passes !== undefined ? tx.public.passes : (input.attributeValue >= input.threshold);
+    
+    // We now read the real nullifier string and passes boolean returned from the updated circuit output!
+    // Since Compact outputs bytes as Uint8Array, we convert to hex string.
+    const derivedNullifier = tx?.public?.nullifier ? Array.from(tx.public.nullifier as Uint8Array, (b) => b.toString(16).padStart(2, "0")).join("") : "";
+    const passes = tx?.public?.passes !== undefined ? tx.public.passes : false;
     
     return {
       nullifier: derivedNullifier,

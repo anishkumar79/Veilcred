@@ -50,6 +50,8 @@ export ledger verifications: Map<Bytes<32>, Boolean>;
 // Only the holder of the matching admin secret can register new issuers.
 export ledger adminKey: Bytes<32>;
 
+
+
 // -----------------------------------------------------------------------
 // Witness: the deployer / admin supplies their secret key privately.
 // -----------------------------------------------------------------------
@@ -64,8 +66,9 @@ export circuit initAdmin(): [] {
   // Derive the public admin key from the secret so it can never be replayed
   // without knowing the original secret.
   const derived: Bytes<32> = persistentHash<Bytes<32>>(secret);
-  // Ensure this can only be called once — if adminKey is already set, assert fails.
-  assert(!approvedIssuers.member(derived), "admin already initialised");
+  // Ensure this can only be called once. We use approvedIssuers to store a sentinel.
+  assert(!approvedIssuers.member(disclose(derived)), "admin already initialised");
+  approvedIssuers.insert(disclose(derived));
   adminKey = disclose(derived);
 }
 
@@ -102,18 +105,22 @@ export circuit registerIssuer(issuerKey: Bytes<32>): [] {
 //   return std::crypto::sig::ed25519::verify(issuer, msg, sig);
 // and the existing call-site in verifyThreshold remains unchanged.
 // ----------------------------------------------------------------------
-struct SigPayload {
-  issuer: Bytes<32>,
-  sig:    Bytes<64>
-}
-
-export circuit verifySig(issuer: Bytes<32>, sig: Bytes<64>): Boolean {
-  // Derive a deterministic commitment that binds issuer to signature.
-  const payload = SigPayload { issuer: issuer, sig: sig };
-  const commitment: Bytes<32> = persistentHash<SigPayload>(payload);
-  // The commitment must appear in the approvedIssuers set, meaning an
-  // admin previously registered this (issuer, sig) pair on-chain.
-  return approvedIssuers.member(commitment);
+export circuit verifySig(
+  issuer: Bytes<32>, 
+  sig: Bytes<64>, 
+  value: Uint<64>, 
+  expiry: Uint<64>
+): Boolean {
+  // Construct the message that was signed: (value ∥ expiry)
+  // In a real app this would be a proper byte encoding. 
+  // For the MVP we hash the tuple to create a 32-byte message.
+  const msgHash: Bytes<32> = persistentHash<{value: Uint<64>, expiry: Uint<64>}>({value: value, expiry: expiry});
+  
+  // Actually verify the Ed25519 signature
+  assert(std::crypto::sig::ed25519::verify(issuer, msgHash, sig), "Cryptographic signature verification failed");
+  
+  // The issuer must still appear in the approvedIssuers set
+  return approvedIssuers.member(disclose(issuer));
 }
 
 struct NullifierInput {
@@ -149,7 +156,7 @@ export circuit verifyThreshold(
   gateId: Bytes<32>,
   threshold: Uint<64>,
   currentTime: Uint<64>
-): [] {
+): { nullifier: Bytes<32>, passes: Boolean } {
   const issuer   = issuerKey();
   const value    = attributeValue();
   const exp      = expiry();
@@ -162,7 +169,7 @@ export circuit verifyThreshold(
 
   // 2. The signature must actually cover this exact credential payload.
   assert(
-    verifySig(issuer, sig),
+    verifySig(issuer, sig, value, exp),
     "signature does not match credential"
   );
 
@@ -182,6 +189,8 @@ export circuit verifyThreshold(
 
   usedNullifiers.insert(disclose(nullifier));
   verifications.insert(disclose(nullifier), disclose(passes));
+
+  return { nullifier: disclose(nullifier), passes: disclose(passes) };
 }
 
 // ----------------------------------------------------------------------
