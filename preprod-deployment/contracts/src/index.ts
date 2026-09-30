@@ -9,12 +9,6 @@ export * from "./witnesses";
 import * as CompiledVeilcredContract from "./managed/veilcred/contract/index.js";
 import * as Witnesses from "./witnesses";
 
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 class ContractWrapper extends CompiledVeilcredContract.Contract<any, any> {
   constructor() {
     super(Witnesses.witnesses);
@@ -32,5 +26,5 @@ export const CompiledBBoardContractContract = CompiledContract.make(
   "veilcred",
   ContractWrapper as any
 ).pipe(
-  CompiledContract.withCompiledFileAssets(path.resolve(__dirname, "./managed/veilcred"))
+  CompiledContract.withCompiledFileAssets("./managed/veilcred")
 ) as any;
