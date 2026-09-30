@@ -10,51 +10,51 @@ export type Witnesses<PS> = {
 }
 
 export type ImpureCircuits<PS> = {
-  initAdmin(context: __compactRuntime.CircuitContext<PS>): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  initAdmin(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   registerIssuer(context: __compactRuntime.CircuitContext<PS>,
-                 issuerKey_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
+                 issuerKey_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   verifySig(context: __compactRuntime.CircuitContext<PS>,
             issuer_0: Uint8Array,
-            sig_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
+            sig_0: Uint8Array): __compactRuntime.CircuitResults<PS, boolean>;
   verifyThreshold(context: __compactRuntime.CircuitContext<PS>,
                   gateId_0: Uint8Array,
                   threshold_0: bigint,
-                  currentTime_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
+                  currentTime_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   isVerified(context: __compactRuntime.CircuitContext<PS>,
-             nullifier_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
+             nullifier_0: Uint8Array): __compactRuntime.CircuitResults<PS, boolean>;
 }
 
 export type ProvableCircuits<PS> = {
-  initAdmin(context: __compactRuntime.CircuitContext<PS>): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  initAdmin(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   registerIssuer(context: __compactRuntime.CircuitContext<PS>,
-                 issuerKey_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
+                 issuerKey_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   verifySig(context: __compactRuntime.CircuitContext<PS>,
             issuer_0: Uint8Array,
-            sig_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
+            sig_0: Uint8Array): __compactRuntime.CircuitResults<PS, boolean>;
   verifyThreshold(context: __compactRuntime.CircuitContext<PS>,
                   gateId_0: Uint8Array,
                   threshold_0: bigint,
-                  currentTime_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
+                  currentTime_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   isVerified(context: __compactRuntime.CircuitContext<PS>,
-             nullifier_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
+             nullifier_0: Uint8Array): __compactRuntime.CircuitResults<PS, boolean>;
 }
 
 export type PureCircuits = {
 }
 
 export type Circuits<PS> = {
-  initAdmin(context: __compactRuntime.CircuitContext<PS>): Promise<__compactRuntime.CircuitResults<PS, []>>;
+  initAdmin(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   registerIssuer(context: __compactRuntime.CircuitContext<PS>,
-                 issuerKey_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, []>>;
+                 issuerKey_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   verifySig(context: __compactRuntime.CircuitContext<PS>,
             issuer_0: Uint8Array,
-            sig_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
+            sig_0: Uint8Array): __compactRuntime.CircuitResults<PS, boolean>;
   verifyThreshold(context: __compactRuntime.CircuitContext<PS>,
                   gateId_0: Uint8Array,
                   threshold_0: bigint,
-                  currentTime_0: bigint): Promise<__compactRuntime.CircuitResults<PS, []>>;
+                  currentTime_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   isVerified(context: __compactRuntime.CircuitContext<PS>,
-             nullifier_0: Uint8Array): Promise<__compactRuntime.CircuitResults<PS, boolean>>;
+             nullifier_0: Uint8Array): __compactRuntime.CircuitResults<PS, boolean>;
 }
 
 export type Ledger = {
@@ -90,9 +90,8 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   impureCircuits: ImpureCircuits<PS>;
   provableCircuits: ProvableCircuits<PS>;
   constructor(witnesses: W);
-  initialState(context: __compactRuntime.ConstructorContext<PS>): Promise<__compactRuntime.ConstructorResult<PS>>;
+  initialState(context: __compactRuntime.ConstructorContext<PS>): __compactRuntime.ConstructorResult<PS>;
 }
 
 export declare function ledger(state: __compactRuntime.StateValue | __compactRuntime.ChargedState): Ledger;
 export declare const pureCircuits: PureCircuits;
-export declare const expectedVk: Record<string, string>;
