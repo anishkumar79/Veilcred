@@ -123,7 +123,7 @@ export circuit verifySig(
   const msgHash: Bytes<32> = persistentHash<SigMessage>(sInput);
   
   // Actually verify the Ed25519 signature
-  assert(std::crypto::sig::ed25519::verify(issuer, msgHash, sig), "Cryptographic signature verification failed");
+  assert(std.crypto.sig.ed25519.verify(issuer, msgHash, sig), "Cryptographic signature verification failed");
   
   // The issuer must still appear in the approvedIssuers set
   return approvedIssuers.member(disclose(issuer));
