@@ -2,7 +2,7 @@
   <h1>🛡️ Veilcred</h1>
   <p><strong>Prove a credential clears the bar — without ever showing what's on it.</strong></p>
   
-  [![CI](https://github.com/anishkumar79/Veilcred/actions/workflows/deploy.yml/badge.svg)](https://github.com/anishkumar79/Veilcred/actions)
+  [![CI](https://github.com/anishkumar79/Veilcred/actions/workflows/ci.yml/badge.svg)](https://github.com/anishkumar79/Veilcred/actions)
   [![Midnight Preprod](https://img.shields.io/badge/Network-Midnight_Preprod-purple.svg)](https://midnight.network)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
