@@ -105,6 +105,11 @@ export circuit registerIssuer(issuerKey: Bytes<32>): [] {
 //   return std::crypto::sig::ed25519::verify(issuer, msg, sig);
 // and the existing call-site in verifyThreshold remains unchanged.
 // ----------------------------------------------------------------------
+struct SigMessage {
+  value: Uint<64>,
+  expiry: Uint<64>
+}
+
 export circuit verifySig(
   issuer: Bytes<32>, 
   sig: Bytes<64>, 
@@ -114,7 +119,7 @@ export circuit verifySig(
   // Construct the message that was signed: (value ∥ expiry)
   // In a real app this would be a proper byte encoding. 
   // For the MVP we hash the tuple to create a 32-byte message.
-  const msgHash: Bytes<32> = persistentHash<{value: Uint<64>, expiry: Uint<64>}>({value: value, expiry: expiry});
+  const msgHash: Bytes<32> = persistentHash<SigMessage>(SigMessage {value: value, expiry: expiry});
   
   // Actually verify the Ed25519 signature
   assert(std::crypto::sig::ed25519::verify(issuer, msgHash, sig), "Cryptographic signature verification failed");
