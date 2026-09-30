@@ -87,15 +87,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-midnight-wallet-
 
-      - name: Deploy Contract
-        run: |
-          cd preprod-deployment/cli
-          npx tsx src/launcher/deploy-gatecheck.ts
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192 --expose-gc"
-          WALLET_SEED: ${{ secrets.WALLET_SEED }}
-          FORCE_DEPLOY: ${{ github.event.inputs.force_deploy || 'true' }}
-
       - name: Save Wallet Database Cache
         if: always()
         uses: actions/cache/save@v4

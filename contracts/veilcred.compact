@@ -119,7 +119,8 @@ export circuit verifySig(
   // Construct the message that was signed: (value ∥ expiry)
   // In a real app this would be a proper byte encoding. 
   // For the MVP we hash the tuple to create a 32-byte message.
-  const msgHash: Bytes<32> = persistentHash<SigMessage>(SigMessage {value: value, expiry: expiry});
+  const sInput = SigMessage { value: value, expiry: expiry };
+  const msgHash: Bytes<32> = persistentHash<SigMessage>(sInput);
   
   // Actually verify the Ed25519 signature
   assert(std::crypto::sig::ed25519::verify(issuer, msgHash, sig), "Cryptographic signature verification failed");
