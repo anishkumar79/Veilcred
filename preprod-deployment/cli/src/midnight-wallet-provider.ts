@@ -82,12 +82,7 @@ export class MidnightWalletProvider implements MidnightProvider, WalletProvider 
   }
 
   async balanceTx(tx: UnboundTransaction, ttl: Date = ttlOneHour()): Promise<FinalizedTransaction> {
-    const currentVersion = (this.wallet as any).currentVersion?.() ?? 0n;
-    const txToBalance = (tx as any).protocolVersion !== undefined
-      ? tx
-      : (this.wallet as any).seal('Unbound', tx, currentVersion);
-
-    const recipe = await this.wallet.balanceUnboundTransaction(txToBalance as any, {
+    const recipe = await this.wallet.balanceUnboundTransaction(tx, {
       ttl,
       tokenKindsToBalance: ['dust'],
     });
