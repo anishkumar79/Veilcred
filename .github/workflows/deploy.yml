@@ -50,9 +50,9 @@ jobs:
           npm install
 
       # -----------------------------------------------------------------------
-      # Compile using the compact toolchain. compact 0.34.0 is now compatible
-      # because we upgraded wallet-sdk to rc.0 which ships ledger-v9 1.0.0-rc.5
-      # (rc.5 supports compact runtime 0.19.0, which rc.4 did not).
+      # Compile using compact 0.34.0 which targets compact-runtime 0.19.0.
+      # DO NOT use `compact update` (no version) — it installs 0.5.2+ which
+      # compiles to runtime 0.20.0, but our SDK only ships compact-runtime 0.19.0.
       # -----------------------------------------------------------------------
       - name: Install Compact compiler
         run: |
@@ -62,7 +62,7 @@ jobs:
 
       - name: Compile Contract
         run: |
-          compact update
+          compact update 0.34.0
           compact --version
           mkdir -p preprod-deployment/contracts/src/managed/veilcred
           compact compile contracts/veilcred.compact preprod-deployment/contracts/src/managed/veilcred
