@@ -48,7 +48,7 @@ jobs:
 
       - name: Compile Contract
         run: |
-          compact update 0.31.1 || compact update 0.31.0
+          compact update 0.34.0
           compact --version
           mkdir -p preprod-deployment/contracts/src/managed/veilcred
           compact compile contracts/veilcred.compact preprod-deployment/contracts/src/managed/veilcred
