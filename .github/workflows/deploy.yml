@@ -32,10 +32,7 @@ jobs:
           npm install --no-save tsx
           node infra/scripts/patch-wallet-sdk.mjs
 
-      - name: Install contracts dependencies
-        run: |
-          cd preprod-deployment/contracts
-          npm install
+
 
       # -----------------------------------------------------------------------
       # Compile using compact 0.31.1/0.31.0 which matches our restored dependencies
