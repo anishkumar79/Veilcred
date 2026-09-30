@@ -92,5 +92,8 @@
     "vite": "^8.0.14",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.6.0"
+  },
+  "overrides": {
+    "@midnightntwrk/ledger-v9": "1.0.0-rc.5"
   }
 }

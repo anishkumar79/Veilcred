@@ -31,6 +31,19 @@ jobs:
           npm install
           npm install --no-save tsx
 
+      - name: Remove nested stale ledger-v9 from testkit-js (force override)
+        run: |
+          # The overrides field in package.json pins @midnightntwrk/ledger-v9 to rc.5,
+          # but patch-package only patches the top-level copy. Remove any nested copies
+          # inside testkit-js so node resolves to the hoisted (patched) rc.5 copy.
+          NESTED_LEDGER="preprod-deployment/node_modules/@midnight-ntwrk/testkit-js/node_modules/@midnightntwrk/ledger-v9"
+          if [ -d "$NESTED_LEDGER" ]; then
+            echo "Removing nested ledger-v9 at $NESTED_LEDGER"
+            rm -rf "$NESTED_LEDGER"
+          else
+            echo "No nested ledger-v9 found (override already deduped it)"
+          fi
+
       - name: Install contracts dependencies
         run: |
           cd preprod-deployment/contracts
